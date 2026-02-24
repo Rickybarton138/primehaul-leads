@@ -1,0 +1,66 @@
+{% extends "base_company.html" %}
+
+{% block title %}Purchases{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Purchased Leads</h1>
+    <p>All leads you have purchased.</p>
+  </div>
+
+  {% if purchases %}
+    <div class="table-wrap">
+      <table class="table table-responsive table-clickable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Pickup Area</th>
+            <th>Dropoff Area</th>
+            <th>CBM</th>
+            <th>Price Paid</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for purchase in purchases %}
+          <tr onclick="window.location='/company/leads/{{ purchase.lead_id }}/purchased'">
+            <td data-label="Date">{{ purchase.created_at.strftime('%d %b %Y') }}</td>
+            <td data-label="Pickup">
+              {% if purchase.lead.pickup and purchase.lead.pickup.postcode %}
+                {{ purchase.lead.pickup.postcode.split(' ')[0] }}
+              {% else %}
+                N/A
+              {% endif %}
+            </td>
+            <td data-label="Dropoff">
+              {% if purchase.lead.dropoff and purchase.lead.dropoff.postcode %}
+                {{ purchase.lead.dropoff.postcode.split(' ')[0] }}
+              {% else %}
+                N/A
+              {% endif %}
+            </td>
+            <td data-label="CBM">{{ purchase.lead.total_cbm }}</td>
+            <td data-label="Price">&pound;{{ "%.2f"|format(purchase.price_pence / 100) }}</td>
+            <td data-label="Status">
+              {% if purchase.payment_status == 'paid' %}
+                <span class="badge badge-green">Paid</span>
+              {% elif purchase.payment_status == 'pending' %}
+                <span class="badge badge-yellow">Pending</span>
+              {% else %}
+                <span class="badge badge-red">{{ purchase.payment_status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="card text-center" style="padding:3rem 1.5rem;">
+      <p class="text-muted mb-2">You haven't purchased any leads yet.</p>
+      <a href="/company/dashboard" class="btn btn-primary">Go to Dashboard</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

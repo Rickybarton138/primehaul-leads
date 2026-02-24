@@ -1,0 +1,100 @@
+{% extends "base_admin.html" %}
+
+{% block title %}All Leads{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Leads</h1>
+    <p>All submitted leads in the system.</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-2">
+    <form method="GET" action="/admin/leads" class="d-flex gap-2" style="flex-wrap:wrap; align-items:flex-end;">
+      <div class="form-group" style="flex:1; min-width:140px; margin-bottom:0;">
+        <label class="form-label" for="status">Status</label>
+        <select id="status" name="status" class="form-input form-select">
+          <option value="">All</option>
+          <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+          <option value="submitted" {% if request.args.get('status') == 'submitted' %}selected{% endif %}>Submitted</option>
+          <option value="in_progress" {% if request.args.get('status') == 'in_progress' %}selected{% endif %}>In Progress</option>
+          <option value="expired" {% if request.args.get('status') == 'expired' %}selected{% endif %}>Expired</option>
+        </select>
+      </div>
+      <div style="margin-bottom:0;">
+        <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+      </div>
+    </form>
+  </div>
+
+  {% if leads %}
+    <div class="table-wrap">
+      <table class="table table-responsive">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Token</th>
+            <th>Pickup</th>
+            <th>Dropoff</th>
+            <th>CBM</th>
+            <th>Items</th>
+            <th>Estimate</th>
+            <th>Status</th>
+            <th>Purchases</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in leads %}
+          <tr>
+            <td data-label="Date">{{ lead.created_at.strftime('%d %b %y') }}</td>
+            <td data-label="Token">
+              <span style="font-family:monospace; font-size:0.8rem;">{{ lead.token[:12] }}</span>
+            </td>
+            <td data-label="Pickup">
+              {% if lead.pickup and lead.pickup.postcode %}
+                {{ lead.pickup.postcode }}
+              {% else %}
+                N/A
+              {% endif %}
+            </td>
+            <td data-label="Dropoff">
+              {% if lead.dropoff and lead.dropoff.postcode %}
+                {{ lead.dropoff.postcode }}
+              {% else %}
+                N/A
+              {% endif %}
+            </td>
+            <td data-label="CBM">{{ lead.total_cbm }}</td>
+            <td data-label="Items">{{ lead.total_items }}</td>
+            <td data-label="Estimate">
+              {% if lead.estimate_low and lead.estimate_high %}
+                &pound;{{ lead.estimate_low }}-{{ lead.estimate_high }}
+              {% else %}
+                &ndash;
+              {% endif %}
+            </td>
+            <td data-label="Status">
+              {% if lead.status == 'active' %}
+                <span class="badge badge-green">Active</span>
+              {% elif lead.status == 'submitted' %}
+                <span class="badge badge-blue">Submitted</span>
+              {% elif lead.status == 'expired' %}
+                <span class="badge badge-red">Expired</span>
+              {% else %}
+                <span class="badge badge-muted">{{ lead.status }}</span>
+              {% endif %}
+            </td>
+            <td data-label="Purchases">{{ lead.purchases|length }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="card text-center" style="padding:2rem;">
+      <p class="text-muted">No leads found matching your filters.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

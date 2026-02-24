@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Photos - {{ room.name }} - PrimeHaul{% endblock %}
+
+{% set progress = 65 %}
+
+{% block head %}
+<style>
+  .room-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .room-counter {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 0.3rem 0.7rem;
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+  }
+
+  .upload-zone {
+    border: 2px dashed rgba(255,255,255,0.12);
+    border-radius: var(--radius);
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover,
+  .upload-zone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .upload-zone-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .upload-zone-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+  .upload-zone-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .preview-thumb {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: rgba(255,255,255,0.04);
+  }
+  .preview-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .preview-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .preview-remove:hover {
+    background: var(--danger);
+  }
+  .photo-count {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+  }
+
+  /* Analysis results */
+  .analysis-section {
+    margin-top: 1.5rem;
+  }
+  .detected-items {
+    list-style: none;
+  }
+  .detected-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--glass-border);
+    font-size: 0.9rem;
+  }
+  .detected-item:last-child { border-bottom: none; }
+  .detected-item-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .detected-item-qty {
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 24px;
+  }
+  .detected-item-cbm {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 0.2rem 0.5rem;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(11,11,12,0.3);
+    border-top-color: #0b0b0c;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .btn + .btn { margin-top: 0.75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="room-indicator">
+  <h1 class="screen-title">{{ room.name }}</h1>
+  <span class="room-counter">Room {{ room_index }} of {{ total_rooms }}</span>
+</div>
+<p class="screen-subtitle">Take photos of this room so our AI can identify your belongings</p>
+
+<form id="uploadForm" method="POST" action="/survey/{{ token }}/room/{{ room.id }}/upload" enctype="multipart/form-data">
+  <div class="card">
+    <div class="card-label">Room photos (up to 6)</div>
+
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-zone-icon">&#128247;</div>
+      <div class="upload-zone-text">Tap to take a photo or choose files</div>
+      <div class="upload-zone-hint">JPG or PNG, up to 6 photos</div>
+      <input type="file" name="photos" id="photoInput" multiple
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment">
+    </div>
+
+    <div class="preview-grid" id="previewGrid"></div>
+    <div class="photo-count" id="photoCount"></div>
+  </div>
+
+  <div class="bottom-actions">
+    <button type="submit" class="btn btn-primary" id="analyzeBtn" disabled>
+      Analyse Photos
+    </button>
+  </div>
+</form>
+
+{% if items is defined and items is not none and items|length > 0 %}
+<!-- Analysis results -->
+<div class="analysis-section">
+  <div class="card">
+    <div class="card-label">Detected items</div>
+    <ul class="detected-items">
+      {% for item in items %}
+      <li class="detected-item">
+        <div class="detected-item-name">
+          <span class="detected-item-qty">{{ item.qty }}x</span>
+          <span>{{ item.name }}</span>
+        </div>
+        {% if item.cbm %}
+        <span class="detected-item-cbm">{{ "%.2f"|format(item.cbm) }} m&sup3;</span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="bottom-actions">
+    {% if room_index < total_rooms %}
+    <a href="/survey/{{ token }}/room/next" class="btn btn-primary">Next Room</a>
+    {% else %}
+    <a href="/survey/{{ token }}/review" class="btn btn-primary">Review Inventory</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var photoInput = document.getElementById('photoInput');
+  var previewGrid = document.getElementById('previewGrid');
+  var photoCount = document.getElementById('photoCount');
+  var analyzeBtn = document.getElementById('analyzeBtn');
+  var uploadZone = document.getElementById('uploadZone');
+  var uploadForm = document.getElementById('uploadForm');
+  var maxPhotos = 6;
+  var selectedFiles = [];
+
+  // Drag and drop
+  uploadZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+  uploadZone.addEventListener('dragleave', function() {
+    uploadZone.classList.remove('dragover');
+  });
+  uploadZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    var files = Array.from(e.dataTransfer.files).filter(function(f) {
+      return f.type.startsWith('image/');
+    });
+    addFiles(files);
+  });
+
+  photoInput.addEventListener('change', function() {
+    var files = Array.from(photoInput.files);
+    addFiles(files);
+  });
+
+  function addFiles(newFiles) {
+    var remaining = maxPhotos - selectedFiles.length;
+    var toAdd = newFiles.slice(0, remaining);
+    selectedFiles = selectedFiles.concat(toAdd);
+    renderPreviews();
+    updateCount();
+  }
+
+  function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    renderPreviews();
+    updateCount();
+  }
+
+  function renderPreviews() {
+    previewGrid.innerHTML = '';
+    selectedFiles.forEach(function(file, idx) {
+      var thumb = document.createElement('div');
+      thumb.className = 'preview-thumb';
+
+      var img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.onload = function() { URL.revokeObjectURL(img.src); };
+
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'preview-remove';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.addEventListener('click', function() { removeFile(idx); });
+
+      thumb.appendChild(img);
+      thumb.appendChild(removeBtn);
+      previewGrid.appendChild(thumb);
+    });
+  }
+
+  function updateCount() {
+    var count = selectedFiles.length;
+    if (count === 0) {
+      photoCount.textContent = '';
+      analyzeBtn.disabled = true;
+    } else {
+      photoCount.textContent = count + ' of ' + maxPhotos + ' photos selected';
+      analyzeBtn.disabled = false;
+    }
+  }
+
+  // Override form submission to use our selectedFiles
+  uploadForm.addEventListener('submit', function(e) {
+    if (selectedFiles.length === 0) {
+      e.preventDefault();
+      return;
+    }
+
+    // Replace file input with our curated list
+    var dt = new DataTransfer();
+    selectedFiles.forEach(function(f) { dt.items.add(f); });
+    photoInput.files = dt.files;
+
+    // Show loading state
+    analyzeBtn.disabled = true;
+    analyzeBtn.innerHTML = '<span class="spinner"></span> Analysing...';
+  });
+})();
+</script>
+{% endblock %}

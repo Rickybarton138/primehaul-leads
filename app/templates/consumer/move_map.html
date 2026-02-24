@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Where are you moving? - PrimeHaul{% endblock %}
+
+{% block head %}
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.2/mapbox-gl-geocoder.css" rel="stylesheet">
+<style>
+  .geocoder-wrap {
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder {
+    width: 100%;
+    max-width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    box-shadow: none;
+    min-height: 48px;
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder--input {
+    color: var(--text);
+    font-size: 1rem;
+    padding: 0.85rem 1rem 0.85rem 2.5rem;
+    height: auto;
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder--input::placeholder {
+    color: var(--text-muted);
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder--input:focus {
+    outline: none;
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder--icon-search {
+    fill: var(--text-muted);
+    top: 14px;
+    left: 10px;
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder--icon-close {
+    fill: var(--text-muted);
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder .suggestions {
+    background: var(--card);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder .suggestions li a {
+    color: var(--text);
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder .suggestions li a:hover,
+  .geocoder-wrap .mapboxgl-ctrl-geocoder .suggestions .active a {
+    background: rgba(46,229,157,0.1);
+    color: var(--text);
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder--icon-close {
+    margin-top: 4px;
+  }
+  .geocoder-wrap .mapboxgl-ctrl-geocoder--button {
+    background: none;
+  }
+  .address-confirmed {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--accent-glow);
+    border: 1px solid rgba(46,229,157,0.2);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-top: 0.5rem;
+  }
+  .address-confirmed.visible {
+    display: flex;
+  }
+  .address-confirmed .tick {
+    font-size: 1rem;
+  }
+</style>
+{% endblock %}
+
+{% set progress = 10 %}
+
+{% block content %}
+<h1 class="screen-title">Where are you moving?</h1>
+<p class="screen-subtitle">Enter your collection and delivery addresses</p>
+
+<form id="moveForm" method="POST" action="/survey/{{ token }}/addresses">
+  <!-- Collection address -->
+  <div class="card">
+    <div class="card-label">Collection address</div>
+    <div class="geocoder-wrap" id="geocoder-pickup"></div>
+    <div class="address-confirmed" id="pickup-confirmed">
+      <span class="tick">&#10003;</span>
+      <span id="pickup-label-text"></span>
+    </div>
+    <input type="hidden" name="pickup_lat" id="pickup_lat">
+    <input type="hidden" name="pickup_lng" id="pickup_lng">
+    <input type="hidden" name="pickup_postcode" id="pickup_postcode">
+    <input type="hidden" name="pickup_city" id="pickup_city">
+    <input type="hidden" name="pickup_label" id="pickup_label">
+  </div>
+
+  <!-- Delivery address -->
+  <div class="card">
+    <div class="card-label">Delivery address</div>
+    <div class="geocoder-wrap" id="geocoder-dropoff"></div>
+    <div class="address-confirmed" id="dropoff-confirmed">
+      <span class="tick">&#10003;</span>
+      <span id="dropoff-label-text"></span>
+    </div>
+    <input type="hidden" name="dropoff_lat" id="dropoff_lat">
+    <input type="hidden" name="dropoff_lng" id="dropoff_lng">
+    <input type="hidden" name="dropoff_postcode" id="dropoff_postcode">
+    <input type="hidden" name="dropoff_city" id="dropoff_city">
+    <input type="hidden" name="dropoff_label" id="dropoff_label">
+  </div>
+
+  <div class="bottom-actions">
+    <button type="submit" class="btn btn-primary" id="continueBtn" disabled>Continue</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.2/mapbox-gl-geocoder.min.js"></script>
+<script>
+(function() {
+  var token = '{{ mapbox_token }}';
+  mapboxgl.accessToken = token;
+
+  var pickupReady = false;
+  var dropoffReady = false;
+  var continueBtn = document.getElementById('continueBtn');
+
+  function checkReady() {
+    continueBtn.disabled = !(pickupReady && dropoffReady);
+  }
+
+  function extractPostcode(text) {
+    if (!text) return '';
+    var match = text.match(/[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}/i);
+    return match ? match[0].toUpperCase() : '';
+  }
+
+  function extractCity(context) {
+    if (!context) return '';
+    for (var i = 0; i < context.length; i++) {
+      if (context[i].id && context[i].id.indexOf('place') === 0) {
+        return context[i].text || '';
+      }
+    }
+    return '';
+  }
+
+  function initGeocoder(containerId, prefix, onResult) {
+    var geocoder = new MapboxGeocoder({
+      accessToken: token,
+      types: 'address,postcode,place',
+      countries: 'gb',
+      placeholder: prefix === 'pickup' ? 'Start typing your collection address...' : 'Start typing your delivery address...',
+      language: 'en-GB',
+      limit: 5
+    });
+
+    document.getElementById(containerId).appendChild(geocoder.onAdd());
+
+    geocoder.on('result', function(ev) {
+      var result = ev.result;
+      var coords = result.center;
+      var label = result.place_name || '';
+      var postcode = extractPostcode(label);
+      var city = extractCity(result.context);
+
+      document.getElementById(prefix + '_lat').value = coords[1];
+      document.getElementById(prefix + '_lng').value = coords[0];
+      document.getElementById(prefix + '_postcode').value = postcode;
+      document.getElementById(prefix + '_city').value = city;
+      document.getElementById(prefix + '_label').value = label;
+
+      // Show confirmation
+      var conf = document.getElementById(prefix + '-confirmed');
+      var labelText = document.getElementById(prefix + '-label-text');
+      labelText.textContent = label;
+      conf.classList.add('visible');
+
+      onResult(true);
+    });
+
+    geocoder.on('clear', function() {
+      document.getElementById(prefix + '_lat').value = '';
+      document.getElementById(prefix + '_lng').value = '';
+      document.getElementById(prefix + '_postcode').value = '';
+      document.getElementById(prefix + '_city').value = '';
+      document.getElementById(prefix + '_label').value = '';
+      document.getElementById(prefix + '-confirmed').classList.remove('visible');
+      onResult(false);
+    });
+  }
+
+  initGeocoder('geocoder-pickup', 'pickup', function(ready) {
+    pickupReady = ready;
+    checkReady();
+  });
+
+  initGeocoder('geocoder-dropoff', 'dropoff', function(ready) {
+    dropoffReady = ready;
+    checkReady();
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Quote Submitted - PrimeHaul{% endblock %}
+
+{% block head %}
+<style>
+  .success-hero {
+    text-align: center;
+    padding: 2rem 0 1.5rem;
+  }
+  .success-check {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.25rem;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 40px rgba(46,229,157,0.25);
+    animation: popIn 0.4s ease-out;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .success-check svg {
+    width: 40px;
+    height: 40px;
+  }
+  .success-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+  }
+  .success-subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  .next-steps {
+    margin-top: 1.5rem;
+  }
+  .step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.85rem 0;
+  }
+  .step-row + .step-row {
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-glow);
+    border: 1px solid rgba(46,229,157,0.2);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-radius: 50%;
+  }
+  .step-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    padding-top: 0.15rem;
+  }
+  .step-text strong {
+    display: block;
+    font-size: 0.92rem;
+    margin-bottom: 0.1rem;
+  }
+  .step-detail {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
+  .move-summary {
+    margin-top: 1.5rem;
+  }
+  .summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0;
+    font-size: 0.88rem;
+  }
+  .summary-row + .summary-row {
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .summary-label { color: var(--text-muted); }
+  .summary-value { font-weight: 600; }
+  .summary-value.accent { color: var(--accent); }
+
+  .route-arrow {
+    text-align: center;
+    padding: 0.5rem 0;
+    color: var(--accent);
+    font-size: 1.1rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Success hero -->
+<div class="success-hero">
+  <div class="success-check">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#0b0b0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  </div>
+  <h1 class="success-title">Quote request submitted!</h1>
+  <p class="success-subtitle">You are all set. Here is what happens next.</p>
+</div>
+
+<!-- What happens next -->
+<div class="card next-steps">
+  <div class="card-label">What happens next?</div>
+
+  <div class="step-row">
+    <div class="step-num">1</div>
+    <div class="step-text">
+      <strong>Your request is sent out</strong>
+      <span class="step-detail">Local removal companies in your area will receive your move details and inventory.</span>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-num">2</div>
+    <div class="step-text">
+      <strong>Companies review and quote</strong>
+      <span class="step-detail">You will be contacted with firm, no-obligation quotes within 24 hours.</span>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-num">3</div>
+    <div class="step-text">
+      <strong>Compare and choose</strong>
+      <span class="step-detail">Compare quotes, check reviews, and choose the company that suits you best.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Move summary -->
+<div class="card move-summary">
+  <div class="card-label">Your move summary</div>
+
+  {% if lead.pickup_city or lead.pickup_postcode %}
+  <div class="summary-row">
+    <span class="summary-label">Collection</span>
+    <span class="summary-value">{{ lead.pickup_city or lead.pickup_postcode or 'N/A' }}</span>
+  </div>
+  {% endif %}
+
+  {% if lead.dropoff_city or lead.dropoff_postcode %}
+  <div class="route-arrow">&darr;</div>
+  <div class="summary-row">
+    <span class="summary-label">Delivery</span>
+    <span class="summary-value">{{ lead.dropoff_city or lead.dropoff_postcode or 'N/A' }}</span>
+  </div>
+  {% endif %}
+
+  {% if lead.move_date %}
+  <div class="summary-row">
+    <span class="summary-label">Moving date</span>
+    <span class="summary-value">{{ lead.move_date.strftime('%d %B %Y') if lead.move_date else 'Flexible' }}</span>
+  </div>
+  {% endif %}
+
+  {% if lead.total_items %}
+  <div class="summary-row">
+    <span class="summary-label">Total items</span>
+    <span class="summary-value">{{ lead.total_items }}</span>
+  </div>
+  {% endif %}
+
+  {% if lead.total_cbm %}
+  <div class="summary-row">
+    <span class="summary-label">Total volume</span>
+    <span class="summary-value">{{ "%.1f"|format(lead.total_cbm) }} m&sup3;</span>
+  </div>
+  {% endif %}
+
+  {% if lead.estimate_low and lead.estimate_high %}
+  <div class="summary-row">
+    <span class="summary-label">Estimated cost</span>
+    <span class="summary-value accent">&pound;{{ lead.estimate_low|int }} &ndash; &pound;{{ lead.estimate_high|int }}</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

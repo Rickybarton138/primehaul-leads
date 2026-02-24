@@ -1,0 +1,75 @@
+{% extends "base_company.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Welcome back, {{ company.company_name }}.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value text-accent">{{ stats.leads_received }}</div>
+      <div class="stat-label">Leads Received</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.leads_purchased }}</div>
+      <div class="stat-label">Leads Purchased</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">&pound;{{ "%.2f"|format(stats.total_spent / 100) }}</div>
+      <div class="stat-label">Total Spent</div>
+    </div>
+  </div>
+
+  <!-- Setup prompts -->
+  {% if not company.base_postcode %}
+    <div class="alert alert-warning mb-2">
+      You haven't set your service area yet. <a href="/company/service-area">Set it now</a> to start receiving leads.
+    </div>
+  {% endif %}
+
+  {% if not company.is_verified %}
+    <div class="alert alert-info mb-2">
+      Your account is pending verification. You will be able to purchase leads once verified by our team.
+    </div>
+  {% endif %}
+
+  <!-- Recent notifications -->
+  <div class="card mt-3">
+    <div class="card-header">
+      <h3>Recent Lead Notifications</h3>
+    </div>
+    <div class="card-body">
+      {% if recent_notifications %}
+        {% for notif in recent_notifications %}
+          <div class="d-flex flex-between flex-center" style="padding:0.7rem 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div>
+              <div style="font-size:0.9rem; font-weight:500;">
+                {{ notif.lead.pickup.postcode[:4] if notif.lead.pickup else 'N/A' }} area
+                &rarr;
+                {{ notif.lead.dropoff.postcode[:4] if notif.lead.dropoff else 'N/A' }} area
+              </div>
+              <div class="text-muted text-sm">
+                {{ notif.lead.total_cbm }} CBM &middot; {{ notif.lead.property_type }}
+              </div>
+            </div>
+            <div>
+              {% if notif.purchased_at %}
+                <span class="badge badge-green">Purchased</span>
+              {% else %}
+                <a href="/company/leads/{{ notif.lead_id }}/preview" class="btn btn-primary btn-sm">View</a>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">No lead notifications yet. Make sure your service area and preferences are set up.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

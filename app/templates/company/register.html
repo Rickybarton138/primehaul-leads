@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Register Your Company{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <h1 class="screen-title">Register Your Company</h1>
+  <p class="screen-subtitle">Join PrimeHaul to receive qualified moving leads in your area.</p>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <form method="POST" action="/company/register">
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label" for="company_name">Company Name</label>
+        <input type="text" id="company_name" name="company_name" class="form-input"
+               placeholder="e.g. Swift Removals Ltd" required
+               value="{{ form.company_name if form else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input type="email" id="email" name="email" class="form-input"
+               placeholder="you@company.co.uk" required
+               value="{{ form.email if form else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" class="form-input"
+               placeholder="07700 900000"
+               value="{{ form.phone if form else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input type="password" id="password" name="password" class="form-input"
+               placeholder="Min 8 characters" required minlength="8">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password_confirm">Confirm Password</label>
+        <input type="password" id="password_confirm" name="password_confirm" class="form-input"
+               placeholder="Re-enter your password" required minlength="8">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block btn-lg">Create Account</button>
+  </form>
+
+  <p class="text-center text-muted mt-3">
+    Already have an account? <a href="/company/login">Sign in</a>
+  </p>
+</div>
+{% endblock %}

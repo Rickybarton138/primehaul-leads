@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Your Estimate - PrimeHaul{% endblock %}
+
+{% set progress = 90 %}
+
+{% block head %}
+<style>
+  .estimate-hero {
+    text-align: center;
+    padding: 1.5rem 0 1rem;
+  }
+  .estimate-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .estimate-price {
+    font-size: clamp(2.2rem, 8vw, 3rem);
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-shadow: 0 0 40px rgba(46,229,157,0.2);
+  }
+  .estimate-note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+  }
+
+  .breakdown-card {
+    margin-top: 1.5rem;
+  }
+  .breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    font-size: 0.9rem;
+  }
+  .breakdown-row + .breakdown-row {
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .breakdown-label {
+    color: var(--text-muted);
+  }
+  .breakdown-value {
+    font-weight: 500;
+  }
+
+  .ai-disclaimer {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.85rem 1rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    margin-top: 1.5rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .ai-disclaimer-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .trust-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+  .trust-item {
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+  }
+  .trust-icon {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+  .trust-text {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    line-height: 1.3;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Price hero -->
+<div class="estimate-hero">
+  <div class="estimate-label">Estimated cost</div>
+  <div class="estimate-price">&pound;{{ estimate_low|int }} &ndash; &pound;{{ estimate_high|int }}</div>
+  <div class="estimate-note">Based on your inventory and distance</div>
+</div>
+
+<!-- Breakdown -->
+<div class="card breakdown-card">
+  <div class="card-label">Quote breakdown</div>
+
+  {% if lead.pickup_property %}
+  <div class="breakdown-row">
+    <span class="breakdown-label">Property type</span>
+    <span class="breakdown-value">{{ lead.pickup_property|capitalize }}</span>
+  </div>
+  {% endif %}
+
+  {% if breakdown and breakdown.distance_miles %}
+  <div class="breakdown-row">
+    <span class="breakdown-label">Distance</span>
+    <span class="breakdown-value">{{ breakdown.distance_miles|round(1) }} miles</span>
+  </div>
+  {% endif %}
+
+  <div class="breakdown-row">
+    <span class="breakdown-label">Total items</span>
+    <span class="breakdown-value">{{ lead.total_items or 0 }}</span>
+  </div>
+
+  <div class="breakdown-row">
+    <span class="breakdown-label">Total volume</span>
+    <span class="breakdown-value">{{ "%.1f"|format(lead.total_cbm or 0) }} m&sup3;</span>
+  </div>
+
+  {% if breakdown and breakdown.estimated_hours %}
+  <div class="breakdown-row">
+    <span class="breakdown-label">Estimated time</span>
+    <span class="breakdown-value">{{ breakdown.estimated_hours|round(1) }} hours</span>
+  </div>
+  {% endif %}
+
+  {% if breakdown and breakdown.van_size %}
+  <div class="breakdown-row">
+    <span class="breakdown-label">Van size</span>
+    <span class="breakdown-value">{{ breakdown.van_size }}</span>
+  </div>
+  {% endif %}
+</div>
+
+<!-- AI disclaimer -->
+<div class="ai-disclaimer">
+  <span class="ai-disclaimer-icon">&#9432;</span>
+  <span>This is an AI-generated estimate based on your photos and move details. Local removal companies will provide firm, no-obligation quotes after reviewing your inventory.</span>
+</div>
+
+<!-- Trust strip -->
+<div class="trust-strip">
+  <div class="trust-item">
+    <div class="trust-icon">&#127775;</div>
+    <div class="trust-text">Free, no obligation</div>
+  </div>
+  <div class="trust-item">
+    <div class="trust-icon">&#9889;</div>
+    <div class="trust-text">Quotes within 24 hours</div>
+  </div>
+  <div class="trust-item">
+    <div class="trust-icon">&#9989;</div>
+    <div class="trust-text">Trusted local companies</div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="bottom-actions">
+  <a href="/survey/{{ token }}/contact" class="btn btn-primary">Get Quotes from Local Movers</a>
+</div>
+{% endblock %}

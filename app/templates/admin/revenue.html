@@ -1,0 +1,89 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Revenue{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Revenue</h1>
+    <p>All lead purchases and revenue tracking.</p>
+  </div>
+
+  <!-- Revenue summary -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value text-accent">&pound;{{ "%.2f"|format(total_revenue / 100) }}</div>
+      <div class="stat-label">Total Revenue</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ purchases|length }}</div>
+      <div class="stat-label">Total Purchases</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">
+        {% if purchases|length > 0 %}
+          &pound;{{ "%.2f"|format((total_revenue / purchases|length) / 100) }}
+        {% else %}
+          &pound;0.00
+        {% endif %}
+      </div>
+      <div class="stat-label">Avg per Purchase</div>
+    </div>
+  </div>
+
+  <!-- Purchases table -->
+  {% if purchases %}
+    <div class="card">
+      <div class="card-header">
+        <h3>All Purchases</h3>
+      </div>
+      <div class="table-wrap">
+        <table class="table table-responsive">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Company</th>
+              <th>Lead</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for purchase in purchases %}
+            <tr>
+              <td data-label="Date">{{ purchase.created_at.strftime('%d %b %Y %H:%M') }}</td>
+              <td data-label="Company">
+                <span style="font-weight:500;">{{ purchase.company.company_name }}</span>
+              </td>
+              <td data-label="Lead">
+                <span style="font-family:monospace; font-size:0.8rem;">
+                  {{ purchase.lead.token[:12] if purchase.lead else 'N/A' }}
+                </span>
+              </td>
+              <td data-label="Amount">&pound;{{ "%.2f"|format(purchase.price_pence / 100) }}</td>
+              <td data-label="Status">
+                {% if purchase.payment_status == 'paid' %}
+                  <span class="badge badge-green">Paid</span>
+                {% elif purchase.payment_status == 'pending' %}
+                  <span class="badge badge-yellow">Pending</span>
+                {% elif purchase.payment_status == 'failed' %}
+                  <span class="badge badge-red">Failed</span>
+                {% elif purchase.payment_status == 'refunded' %}
+                  <span class="badge badge-blue">Refunded</span>
+                {% else %}
+                  <span class="badge badge-muted">{{ purchase.payment_status }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="card text-center" style="padding:2rem;">
+      <p class="text-muted">No purchases recorded yet.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

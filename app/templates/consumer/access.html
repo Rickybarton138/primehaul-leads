@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Access Details - PrimeHaul{% endblock %}
+
+{% set progress = 35 %}
+
+{% block head %}
+<style>
+  .access-section + .access-section { margin-top: 2rem; }
+  .question { margin-bottom: 1rem; }
+  .question-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .tile-grid.compact {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.5rem;
+  }
+  .tile-grid.compact .tile {
+    padding: 0.65rem 0.4rem;
+    font-size: 0.8rem;
+  }
+  .tile-grid.compact .tile-icon { font-size: 1.1rem; }
+  .tile-grid.two-col {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+  }
+  .toggle-row label {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  .toggle {
+    position: relative;
+    width: 50px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+  .toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+  .toggle-track {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.1);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-track {
+    background: var(--accent);
+  }
+  .toggle input:checked + .toggle-track::after {
+    transform: translateX(22px);
+  }
+  .lift-question {
+    display: none;
+  }
+  .lift-question.visible {
+    display: block;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="screen-title">Access details</h1>
+<p class="screen-subtitle">Help us understand any access challenges</p>
+
+<form id="accessForm" method="POST" action="/survey/{{ token }}/access">
+  <input type="hidden" name="access_json" id="access_json">
+
+  <!-- Pickup access -->
+  <div class="access-section">
+    <div class="card">
+      <div class="card-label">Collection property access</div>
+
+      <div class="question">
+        <div class="question-label">What floor?</div>
+        <div class="tile-grid compact" data-group="pickup_floor">
+          <div class="tile" data-group="pickup_floor" data-value="ground">
+            <span class="tile-label">Ground</span>
+          </div>
+          <div class="tile" data-group="pickup_floor" data-value="1">
+            <span class="tile-label">1st</span>
+          </div>
+          <div class="tile" data-group="pickup_floor" data-value="2">
+            <span class="tile-label">2nd</span>
+          </div>
+          <div class="tile" data-group="pickup_floor" data-value="3">
+            <span class="tile-label">3rd</span>
+          </div>
+          <div class="tile" data-group="pickup_floor" data-value="4+">
+            <span class="tile-label">4th+</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="question lift-question" id="pickup-lift-q">
+        <div class="toggle-row">
+          <label>Is there a lift?</label>
+          <div class="toggle">
+            <input type="checkbox" id="pickup_lift">
+            <span class="toggle-track"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-label">Parking type</div>
+        <div class="tile-grid compact" data-group="pickup_parking">
+          <div class="tile" data-group="pickup_parking" data-value="driveway">
+            <span class="tile-icon">&#127970;</span>
+            <span class="tile-label">Driveway</span>
+          </div>
+          <div class="tile" data-group="pickup_parking" data-value="street">
+            <span class="tile-icon">&#128739;</span>
+            <span class="tile-label">Street</span>
+          </div>
+          <div class="tile" data-group="pickup_parking" data-value="permit">
+            <span class="tile-icon">&#9888;</span>
+            <span class="tile-label">Permit zone</span>
+          </div>
+          <div class="tile" data-group="pickup_parking" data-value="limited">
+            <span class="tile-icon">&#128683;</span>
+            <span class="tile-label">Very limited</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="toggle-row">
+          <label>Any narrow access? (e.g. tight staircase, narrow hallway)</label>
+          <div class="toggle">
+            <input type="checkbox" id="pickup_narrow">
+            <span class="toggle-track"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dropoff access -->
+  <div class="access-section">
+    <div class="card">
+      <div class="card-label">Delivery property access</div>
+
+      <div class="question">
+        <div class="question-label">What floor?</div>
+        <div class="tile-grid compact" data-group="dropoff_floor">
+          <div class="tile" data-group="dropoff_floor" data-value="ground">
+            <span class="tile-label">Ground</span>
+          </div>
+          <div class="tile" data-group="dropoff_floor" data-value="1">
+            <span class="tile-label">1st</span>
+          </div>
+          <div class="tile" data-group="dropoff_floor" data-value="2">
+            <span class="tile-label">2nd</span>
+          </div>
+          <div class="tile" data-group="dropoff_floor" data-value="3">
+            <span class="tile-label">3rd</span>
+          </div>
+          <div class="tile" data-group="dropoff_floor" data-value="4+">
+            <span class="tile-label">4th+</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="question lift-question" id="dropoff-lift-q">
+        <div class="toggle-row">
+          <label>Is there a lift?</label>
+          <div class="toggle">
+            <input type="checkbox" id="dropoff_lift">
+            <span class="toggle-track"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-label">Parking type</div>
+        <div class="tile-grid compact" data-group="dropoff_parking">
+          <div class="tile" data-group="dropoff_parking" data-value="driveway">
+            <span class="tile-icon">&#127970;</span>
+            <span class="tile-label">Driveway</span>
+          </div>
+          <div class="tile" data-group="dropoff_parking" data-value="street">
+            <span class="tile-icon">&#128739;</span>
+            <span class="tile-label">Street</span>
+          </div>
+          <div class="tile" data-group="dropoff_parking" data-value="permit">
+            <span class="tile-icon">&#9888;</span>
+            <span class="tile-label">Permit zone</span>
+          </div>
+          <div class="tile" data-group="dropoff_parking" data-value="limited">
+            <span class="tile-icon">&#128683;</span>
+            <span class="tile-label">Very limited</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="toggle-row">
+          <label>Any narrow access? (e.g. tight staircase, narrow hallway)</label>
+          <div class="toggle">
+            <input type="checkbox" id="dropoff_narrow">
+            <span class="toggle-track"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-actions">
+    <button type="submit" class="btn btn-primary" id="continueBtn">Continue</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var state = {
+    pickup_floor: '',
+    pickup_lift: false,
+    pickup_parking: '',
+    pickup_narrow: false,
+    dropoff_floor: '',
+    dropoff_lift: false,
+    dropoff_parking: '',
+    dropoff_narrow: false
+  };
+
+  // Tile selection
+  document.querySelectorAll('.tile').forEach(function(tile) {
+    tile.addEventListener('click', function() {
+      var group = tile.getAttribute('data-group');
+      var value = tile.getAttribute('data-value');
+
+      // Deselect siblings in same group
+      document.querySelectorAll('.tile[data-group="' + group + '"]').forEach(function(s) {
+        s.classList.remove('selected');
+      });
+      tile.classList.add('selected');
+
+      state[group] = value;
+
+      // Show/hide lift question based on floor
+      if (group === 'pickup_floor') {
+        var liftQ = document.getElementById('pickup-lift-q');
+        if (value !== 'ground') {
+          liftQ.classList.add('visible');
+        } else {
+          liftQ.classList.remove('visible');
+          state.pickup_lift = false;
+          document.getElementById('pickup_lift').checked = false;
+        }
+      }
+      if (group === 'dropoff_floor') {
+        var liftQ = document.getElementById('dropoff-lift-q');
+        if (value !== 'ground') {
+          liftQ.classList.add('visible');
+        } else {
+          liftQ.classList.remove('visible');
+          state.dropoff_lift = false;
+          document.getElementById('dropoff_lift').checked = false;
+        }
+      }
+    });
+  });
+
+  // Toggle listeners
+  document.getElementById('pickup_lift').addEventListener('change', function() {
+    state.pickup_lift = this.checked;
+  });
+  document.getElementById('dropoff_lift').addEventListener('change', function() {
+    state.dropoff_lift = this.checked;
+  });
+  document.getElementById('pickup_narrow').addEventListener('change', function() {
+    state.pickup_narrow = this.checked;
+  });
+  document.getElementById('dropoff_narrow').addEventListener('change', function() {
+    state.dropoff_narrow = this.checked;
+  });
+
+  // Form submit - serialize state to JSON
+  document.getElementById('accessForm').addEventListener('submit', function(e) {
+    document.getElementById('access_json').value = JSON.stringify(state);
+  });
+})();
+</script>
+{% endblock %}

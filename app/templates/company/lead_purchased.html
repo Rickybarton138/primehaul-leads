@@ -1,0 +1,206 @@
+{% extends "base_company.html" %}
+
+{% block title %}Lead Details{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Lead Details</h1>
+    <p>Full lead information &mdash; unlocked.</p>
+  </div>
+
+  <!-- Customer contact (prominent) -->
+  <div class="card" style="border-color: rgba(46,229,157,0.3);">
+    <div class="card-label">Customer Contact</div>
+    <div style="margin-bottom:0.75rem;">
+      <div style="font-size:1.15rem; font-weight:600;">{{ lead.customer_name or 'Not provided' }}</div>
+    </div>
+    <div class="d-flex gap-2" style="flex-wrap:wrap;">
+      {% if lead.customer_phone %}
+        <a href="tel:{{ lead.customer_phone }}" class="btn btn-primary btn-sm">
+          Call {{ lead.customer_phone }}
+        </a>
+      {% endif %}
+      {% if lead.customer_email %}
+        <a href="mailto:{{ lead.customer_email }}" class="btn btn-outline btn-sm">
+          Email {{ lead.customer_email }}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Move details -->
+  <div class="card">
+    <div class="card-label">Move Details</div>
+    <ul class="detail-list">
+      <li>
+        <span class="detail-key">Pickup Address</span>
+        <span class="detail-val">{{ lead.pickup.label if lead.pickup else 'N/A' }}</span>
+      </li>
+      <li>
+        <span class="detail-key">Dropoff Address</span>
+        <span class="detail-val">{{ lead.dropoff.label if lead.dropoff else 'N/A' }}</span>
+      </li>
+      <li>
+        <span class="detail-key">Distance</span>
+        <span class="detail-val">{{ "%.1f"|format(lead.distance_miles) if lead.distance_miles else 'N/A' }} miles</span>
+      </li>
+      <li>
+        <span class="detail-key">Property Type</span>
+        <span class="detail-val">{{ lead.property_type or 'Not specified' }}</span>
+      </li>
+      <li>
+        <span class="detail-key">Dropoff Property</span>
+        <span class="detail-val">{{ lead.dropoff_property_type or 'Not specified' }}</span>
+      </li>
+      <li>
+        <span class="detail-key">Move Date</span>
+        <span class="detail-val">
+          {% if lead.move_date %}
+            {{ lead.move_date.strftime('%d %b %Y') }}
+          {% else %}
+            Flexible
+          {% endif %}
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Volume and estimate -->
+  <div class="card">
+    <div class="card-label">Volume &amp; Estimate</div>
+    <ul class="detail-list">
+      <li>
+        <span class="detail-key">Total Items</span>
+        <span class="detail-val">{{ lead.total_items }}</span>
+      </li>
+      <li>
+        <span class="detail-key">Total Volume</span>
+        <span class="detail-val">{{ lead.total_cbm }} CBM</span>
+      </li>
+      <li>
+        <span class="detail-key">Estimated Weight</span>
+        <span class="detail-val">{{ lead.total_weight_kg }} kg</span>
+      </li>
+      <li>
+        <span class="detail-key">Bulky Items</span>
+        <span class="detail-val">{{ lead.bulky_items }}</span>
+      </li>
+      <li>
+        <span class="detail-key">Fragile Items</span>
+        <span class="detail-val">{{ lead.fragile_items }}</span>
+      </li>
+      <li>
+        <span class="detail-key">Estimate Range</span>
+        <span class="detail-val">
+          {% if lead.estimate_low and lead.estimate_high %}
+            &pound;{{ lead.estimate_low }} &ndash; &pound;{{ lead.estimate_high }}
+          {% else %}
+            Pending
+          {% endif %}
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Access details -->
+  {% if lead.pickup_access or lead.dropoff_access %}
+  <div class="card">
+    <div class="card-label">Access Details</div>
+    <div class="form-row">
+      {% if lead.pickup_access %}
+      <div>
+        <h3 class="text-sm text-muted mb-1">Pickup Access</h3>
+        <ul class="detail-list">
+          {% if lead.pickup_access.floor is defined %}
+            <li><span class="detail-key">Floor</span><span class="detail-val">{{ lead.pickup_access.floor }}</span></li>
+          {% endif %}
+          {% if lead.pickup_access.has_lift is defined %}
+            <li><span class="detail-key">Lift</span><span class="detail-val">{{ 'Yes' if lead.pickup_access.has_lift else 'No' }}</span></li>
+          {% endif %}
+          {% if lead.pickup_access.parking %}
+            <li><span class="detail-key">Parking</span><span class="detail-val">{{ lead.pickup_access.parking }}</span></li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if lead.dropoff_access %}
+      <div>
+        <h3 class="text-sm text-muted mb-1">Dropoff Access</h3>
+        <ul class="detail-list">
+          {% if lead.dropoff_access.floor is defined %}
+            <li><span class="detail-key">Floor</span><span class="detail-val">{{ lead.dropoff_access.floor }}</span></li>
+          {% endif %}
+          {% if lead.dropoff_access.has_lift is defined %}
+            <li><span class="detail-key">Lift</span><span class="detail-val">{{ 'Yes' if lead.dropoff_access.has_lift else 'No' }}</span></li>
+          {% endif %}
+          {% if lead.dropoff_access.parking %}
+            <li><span class="detail-key">Parking</span><span class="detail-val">{{ lead.dropoff_access.parking }}</span></li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Room-by-room inventory -->
+  {% if rooms_with_items %}
+  <div class="card">
+    <div class="card-label">Room-by-Room Inventory</div>
+    {% for room in rooms_with_items %}
+      <div style="margin-bottom:1.25rem; {% if not loop.last %}padding-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.04);{% endif %}">
+        <h3 style="margin-bottom:0.5rem;">{{ room.name }}</h3>
+        {% if room.summary %}
+          <p class="text-muted text-sm" style="margin-bottom:0.5rem;">{{ room.summary }}</p>
+        {% endif %}
+
+        <!-- Room photos -->
+        {% if room.photos %}
+          <div style="display:flex; gap:0.5rem; overflow-x:auto; margin-bottom:0.75rem; padding-bottom:0.5rem;">
+            {% for photo in room.photos %}
+              <img src="/static/uploads/{{ photo.filename }}" alt="{{ room.name }} photo"
+                   style="height:120px; border-radius:var(--radius-sm); object-fit:cover; flex-shrink:0;">
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Items table -->
+        {% if room.items %}
+          <div class="table-wrap">
+            <table class="table" style="font-size:0.8rem;">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>CBM</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in room.items %}
+                <tr>
+                  <td>
+                    {{ item.name }}
+                    {% if item.bulky %}<span class="badge badge-yellow" style="margin-left:0.3rem;">Bulky</span>{% endif %}
+                    {% if item.fragile %}<span class="badge badge-red" style="margin-left:0.3rem;">Fragile</span>{% endif %}
+                  </td>
+                  <td>{{ item.qty }}</td>
+                  <td>{{ item.cbm }}</td>
+                  <td class="text-muted">{{ item.notes or '' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="mt-3">
+    <a href="/company/purchases" class="btn btn-secondary btn-block">Back to Purchases</a>
+  </div>
+</div>
+{% endblock %}

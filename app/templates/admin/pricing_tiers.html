@@ -1,0 +1,107 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Pricing Tiers{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Pricing Tiers</h1>
+    <p>Configure lead pricing based on move volume (CBM).</p>
+  </div>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+  {% if success %}
+    <div class="alert alert-success">{{ success }}</div>
+  {% endif %}
+
+  <!-- Existing tiers -->
+  {% if tiers %}
+    <div class="table-wrap mb-3">
+      <table class="table table-responsive">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Min CBM</th>
+            <th>Max CBM</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tier in tiers %}
+          <tr>
+            <td data-label="Name">
+              <span style="font-weight:500;">{{ tier.name }}</span>
+            </td>
+            <td data-label="Min CBM">{{ tier.min_cbm }}</td>
+            <td data-label="Max CBM">{{ tier.max_cbm if tier.max_cbm else 'No limit' }}</td>
+            <td data-label="Price">&pound;{{ "%.2f"|format(tier.price_pence / 100) }}</td>
+            <td data-label="Status">
+              {% if tier.is_active %}
+                <span class="badge badge-green">Active</span>
+              {% else %}
+                <span class="badge badge-muted">Inactive</span>
+              {% endif %}
+            </td>
+            <td data-label="Actions">
+              <form method="POST" action="/admin/pricing/{{ tier.id }}/toggle" style="display:inline;">
+                {% if tier.is_active %}
+                  <button type="submit" class="btn btn-secondary btn-sm">Disable</button>
+                {% else %}
+                  <button type="submit" class="btn btn-primary btn-sm">Enable</button>
+                {% endif %}
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="alert alert-warning mb-3">
+      No pricing tiers configured yet. Add one below.
+    </div>
+  {% endif %}
+
+  <!-- Add / Edit tier form -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Add New Tier</h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="/admin/pricing">
+        <div class="form-group">
+          <label class="form-label" for="name">Tier Name</label>
+          <input type="text" id="name" name="name" class="form-input"
+                 placeholder="e.g. Small Move, Medium Move, Large Move" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="min_cbm">Min CBM</label>
+            <input type="number" id="min_cbm" name="min_cbm" class="form-input"
+                   placeholder="0" step="0.5" min="0" value="0" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="max_cbm">Max CBM</label>
+            <input type="number" id="max_cbm" name="max_cbm" class="form-input"
+                   placeholder="Leave blank for no limit" step="0.5" min="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="price">Lead Price (&pound;)</label>
+          <input type="number" id="price" name="price" class="form-input"
+                 placeholder="e.g. 12.50" step="0.01" min="0.01" required>
+          <p class="form-hint">How much a company pays to unlock this lead.</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add Tier</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

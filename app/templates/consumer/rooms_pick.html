@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Select Your Rooms - PrimeHaul{% endblock %}
+
+{% set progress = 55 %}
+
+{% block head %}
+<style>
+  .room-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+  }
+  .room-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.85rem 0.4rem;
+    background: rgba(255,255,255,0.04);
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    text-align: center;
+  }
+  .room-tile:hover { background: rgba(255,255,255,0.07); }
+  .room-tile:active { transform: scale(0.97); }
+  .room-tile.added {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .room-tile .room-emoji { font-size: 1.5rem; }
+  .room-tile .room-name { font-size: 0.75rem; font-weight: 500; line-height: 1.2; }
+
+  .selected-rooms {
+    margin-top: 1.5rem;
+  }
+  .selected-rooms-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    background: var(--accent-glow);
+    border: 1px solid rgba(46,229,157,0.25);
+    border-radius: 100px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: rgba(255,255,255,0.1);
+    color: var(--text-muted);
+    border-radius: 50%;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    line-height: 1;
+  }
+  .chip-remove:hover {
+    background: rgba(255,77,87,0.3);
+    color: #ff4d57;
+  }
+  .no-rooms {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  @media (min-width: 400px) {
+    .room-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="screen-title">Which rooms are you moving?</h1>
+<p class="screen-subtitle">Tap each room you need to move items from</p>
+
+<div class="card">
+  <div class="room-grid" id="roomGrid">
+    <div class="room-tile" data-room="Living Room">
+      <span class="room-emoji">&#128715;</span>
+      <span class="room-name">Living Room</span>
+    </div>
+    <div class="room-tile" data-room="Kitchen">
+      <span class="room-emoji">&#127859;</span>
+      <span class="room-name">Kitchen</span>
+    </div>
+    <div class="room-tile" data-room="Bedroom 1">
+      <span class="room-emoji">&#128716;</span>
+      <span class="room-name">Bedroom 1</span>
+    </div>
+    <div class="room-tile" data-room="Bedroom 2">
+      <span class="room-emoji">&#128716;</span>
+      <span class="room-name">Bedroom 2</span>
+    </div>
+    <div class="room-tile" data-room="Bedroom 3">
+      <span class="room-emoji">&#128716;</span>
+      <span class="room-name">Bedroom 3</span>
+    </div>
+    <div class="room-tile" data-room="Bathroom">
+      <span class="room-emoji">&#128703;</span>
+      <span class="room-name">Bathroom</span>
+    </div>
+    <div class="room-tile" data-room="Dining Room">
+      <span class="room-emoji">&#127869;</span>
+      <span class="room-name">Dining Room</span>
+    </div>
+    <div class="room-tile" data-room="Home Office">
+      <span class="room-emoji">&#128187;</span>
+      <span class="room-name">Home Office</span>
+    </div>
+    <div class="room-tile" data-room="Garage">
+      <span class="room-emoji">&#128663;</span>
+      <span class="room-name">Garage</span>
+    </div>
+    <div class="room-tile" data-room="Garden / Shed">
+      <span class="room-emoji">&#127807;</span>
+      <span class="room-name">Garden / Shed</span>
+    </div>
+    <div class="room-tile" data-room="Hallway">
+      <span class="room-emoji">&#128682;</span>
+      <span class="room-name">Hallway</span>
+    </div>
+    <div class="room-tile" data-room="Loft / Attic">
+      <span class="room-emoji">&#128230;</span>
+      <span class="room-name">Loft / Attic</span>
+    </div>
+  </div>
+</div>
+
+<!-- Selected rooms -->
+<div class="selected-rooms" id="selectedSection">
+  <div class="selected-rooms-label">Selected rooms</div>
+  <div class="chips" id="chipsContainer">
+    {% if rooms and rooms|length > 0 %}
+      {% for room in rooms %}
+      <div class="chip" data-room="{{ room.name }}">
+        <span>{{ room.name }}</span>
+        <button type="button" class="chip-remove" data-room="{{ room.name }}" title="Remove">&times;</button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="no-rooms" id="noRoomsMsg">No rooms selected yet</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="bottom-actions">
+  <form id="doneForm" method="POST" action="/survey/{{ token }}/rooms/done">
+    <button type="submit" class="btn btn-primary" id="continueBtn"
+      {% if not rooms or rooms|length == 0 %}disabled{% endif %}>
+      Continue to photos
+    </button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var token = '{{ token }}';
+  var selectedRooms = new Set();
+  var continueBtn = document.getElementById('continueBtn');
+  var chipsContainer = document.getElementById('chipsContainer');
+  var noRoomsMsg = document.getElementById('noRoomsMsg');
+
+  // Initialize from server-rendered rooms
+  {% if rooms and rooms|length > 0 %}
+    {% for room in rooms %}
+    selectedRooms.add('{{ room.name }}');
+    {% endfor %}
+  {% endif %}
+
+  // Mark tiles that are already selected
+  updateTileStates();
+
+  function updateTileStates() {
+    document.querySelectorAll('.room-tile').forEach(function(tile) {
+      var name = tile.getAttribute('data-room');
+      if (selectedRooms.has(name)) {
+        tile.classList.add('added');
+      } else {
+        tile.classList.remove('added');
+      }
+    });
+    continueBtn.disabled = selectedRooms.size === 0;
+  }
+
+  function renderChips() {
+    chipsContainer.innerHTML = '';
+    if (selectedRooms.size === 0) {
+      chipsContainer.innerHTML = '<p class="no-rooms" id="noRoomsMsg">No rooms selected yet</p>';
+      return;
+    }
+    selectedRooms.forEach(function(name) {
+      var chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.setAttribute('data-room', name);
+      chip.innerHTML = '<span>' + name + '</span>' +
+        '<button type="button" class="chip-remove" data-room="' + name + '" title="Remove">&times;</button>';
+      chipsContainer.appendChild(chip);
+    });
+    // Bind remove buttons
+    chipsContainer.querySelectorAll('.chip-remove').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        removeRoom(btn.getAttribute('data-room'));
+      });
+    });
+  }
+
+  function addRoom(name) {
+    if (selectedRooms.has(name)) return;
+    selectedRooms.add(name);
+    updateTileStates();
+    renderChips();
+
+    // POST to server
+    fetch('/survey/' + token + '/rooms/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room_name: name })
+    });
+  }
+
+  function removeRoom(name) {
+    if (!selectedRooms.has(name)) return;
+    selectedRooms.delete(name);
+    updateTileStates();
+    renderChips();
+
+    // POST to server to remove
+    fetch('/survey/' + token + '/rooms/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room_name: name })
+    });
+  }
+
+  // Tile click handlers
+  document.querySelectorAll('.room-tile').forEach(function(tile) {
+    tile.addEventListener('click', function() {
+      var name = tile.getAttribute('data-room');
+      if (selectedRooms.has(name)) {
+        removeRoom(name);
+      } else {
+        addRoom(name);
+      }
+    });
+  });
+
+  // Initial chip remove bindings (for server-rendered chips)
+  chipsContainer.querySelectorAll('.chip-remove').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      removeRoom(btn.getAttribute('data-room'));
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Review Inventory - PrimeHaul{% endblock %}
+
+{% set progress = 80 %}
+
+{% block head %}
+<style>
+  .room-block + .room-block { margin-top: 1rem; }
+  .room-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .room-name {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .room-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 0.2rem 0.6rem;
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+  }
+  .item-list { list-style: none; }
+  .item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.88rem;
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .item-qty {
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 30px;
+  }
+  .item-cbm {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    padding: 0.15rem 0.4rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .summary-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(46,229,157,0.15);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+  }
+  .summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+  }
+  .summary-row + .summary-row {
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .summary-label {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+  }
+  .summary-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .summary-value.accent { color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="screen-title">Review your inventory</h1>
+<p class="screen-subtitle">Check the items detected from your photos</p>
+
+{% for room_data in rooms_with_items %}
+<div class="room-block">
+  <div class="card">
+    <div class="room-header">
+      <span class="room-name">{{ room_data.room.name }}</span>
+      <span class="room-count">{{ room_data.items|length }} item{{ 's' if room_data.items|length != 1 else '' }}</span>
+    </div>
+    <ul class="item-list">
+      {% for item in room_data.items %}
+      <li class="item-row">
+        <div class="item-left">
+          <span class="item-qty">{{ item.qty }}&times;</span>
+          <span>{{ item.name }}</span>
+        </div>
+        {% if item.cbm %}
+        <span class="item-cbm">{{ "%.2f"|format(item.cbm) }} m&sup3;</span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Summary -->
+<div class="summary-card">
+  <div class="card-label">Move summary</div>
+  <div class="summary-row">
+    <span class="summary-label">Total items</span>
+    <span class="summary-value">{{ lead.total_items or 0 }}</span>
+  </div>
+  <div class="summary-row">
+    <span class="summary-label">Total volume</span>
+    <span class="summary-value accent">{{ "%.1f"|format(lead.total_cbm or 0) }} m&sup3;</span>
+  </div>
+  {% if lead.total_weight_kg %}
+  <div class="summary-row">
+    <span class="summary-label">Estimated weight</span>
+    <span class="summary-value">{{ lead.total_weight_kg|int }} kg</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="bottom-actions">
+  <form method="POST" action="/survey/{{ token }}/review">
+    <button type="submit" class="btn btn-primary">Get Your Estimate</button>
+  </form>
+</div>
+{% endblock %}

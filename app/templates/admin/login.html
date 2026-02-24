@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <h1 class="screen-title">Admin Login</h1>
+  <p class="screen-subtitle">Sign in to the PrimeHaul admin panel.</p>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <form method="POST" action="/admin/login">
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input type="email" id="email" name="email" class="form-input"
+               placeholder="admin@primehaul.co.uk" required
+               value="{{ form.email if form else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input type="password" id="password" name="password" class="form-input"
+               placeholder="Enter your password" required>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block btn-lg">Sign In</button>
+  </form>
+</div>
+{% endblock %}

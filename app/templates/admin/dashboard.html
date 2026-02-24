@@ -1,0 +1,109 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Overview of leads, companies, and revenue.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value text-accent">{{ stats.total_leads }}</div>
+      <div class="stat-label">Total Leads</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.active_leads }}</div>
+      <div class="stat-label">Active Leads</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.total_companies }}</div>
+      <div class="stat-label">Companies</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">&pound;{{ "%.2f"|format(stats.total_revenue / 100) }}</div>
+      <div class="stat-label">Total Revenue</div>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <!-- Recent leads -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Recent Leads</h3>
+        <a href="/admin/leads" class="btn btn-ghost btn-sm">View all</a>
+      </div>
+      <div class="card-body">
+        {% if stats.recent_leads %}
+          {% for lead in stats.recent_leads %}
+            <div style="padding:0.6rem 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div class="d-flex flex-between flex-center">
+                <div>
+                  <span style="font-size:0.85rem; font-weight:500;">{{ lead.token }}</span>
+                  <span class="text-muted text-sm" style="margin-left:0.5rem;">
+                    {{ lead.total_cbm }} CBM
+                  </span>
+                </div>
+                <div>
+                  {% if lead.status == 'active' %}
+                    <span class="badge badge-green">Active</span>
+                  {% elif lead.status == 'submitted' %}
+                    <span class="badge badge-blue">Submitted</span>
+                  {% elif lead.status == 'expired' %}
+                    <span class="badge badge-red">Expired</span>
+                  {% else %}
+                    <span class="badge badge-muted">{{ lead.status }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="text-muted text-sm">
+                {% if lead.pickup and lead.pickup.postcode %}{{ lead.pickup.postcode }}{% endif %}
+                &rarr;
+                {% if lead.dropoff and lead.dropoff.postcode %}{{ lead.dropoff.postcode }}{% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted text-sm">No leads yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent companies -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Recent Signups</h3>
+        <a href="/admin/companies" class="btn btn-ghost btn-sm">View all</a>
+      </div>
+      <div class="card-body">
+        {% if stats.recent_companies %}
+          {% for co in stats.recent_companies %}
+            <div style="padding:0.6rem 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div class="d-flex flex-between flex-center">
+                <div>
+                  <span style="font-size:0.85rem; font-weight:500;">{{ co.company_name }}</span>
+                </div>
+                <div>
+                  {% if co.is_verified %}
+                    <span class="badge badge-green">Verified</span>
+                  {% else %}
+                    <span class="badge badge-yellow">Pending</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="text-muted text-sm">
+                {{ co.email }} &middot; {{ co.base_postcode or 'No location set' }}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted text-sm">No companies registered yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Dashboard{% endblock %} - PrimeHaul</title>
+  <link rel="stylesheet" href="/static/app.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="app">
+    <!-- Top navigation -->
+    <header class="nav">
+      <div class="nav-wide">
+        <div class="nav-left">
+          <a href="/company/dashboard" class="logo">PrimeHaul</a>
+          <span class="logo-sub hide-mobile">{{ company.company_name if company else '' }}</span>
+        </div>
+        <div class="nav-right">
+          <a href="/company/logout" class="btn btn-ghost btn-sm">Logout</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- Desktop sidebar -->
+      <aside class="sidebar">
+        <ul class="sidebar-nav">
+          <li>
+            <a href="/company/dashboard" class="{% if active_page == 'dashboard' %}active{% endif %}">
+              <span class="nav-icon">&#9632;</span> Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="/company/service-area" class="{% if active_page == 'service_area' %}active{% endif %}">
+              <span class="nav-icon">&#9906;</span> Service Area
+            </a>
+          </li>
+          <li>
+            <a href="/company/preferences" class="{% if active_page == 'preferences' %}active{% endif %}">
+              <span class="nav-icon">&#9881;</span> Preferences
+            </a>
+          </li>
+          <li>
+            <a href="/company/purchases" class="{% if active_page == 'purchases' %}active{% endif %}">
+              <span class="nav-icon">&#9733;</span> Purchases
+            </a>
+          </li>
+          <li>
+            <a href="/company/account" class="{% if active_page == 'account' %}active{% endif %}">
+              <span class="nav-icon">&#9998;</span> Account
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Main content -->
+      <main class="main">
+        {% if flash_messages is defined %}
+          {% for cat, msg in flash_messages %}
+            <div class="alert alert-{{ cat }} slide-up">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    <!-- Mobile bottom nav -->
+    <nav class="bottom-nav hide-desktop">
+      <a href="/company/dashboard" class="{% if active_page == 'dashboard' %}active{% endif %}">
+        <span class="bnav-icon">&#9632;</span> Dashboard
+      </a>
+      <a href="/company/service-area" class="{% if active_page == 'service_area' %}active{% endif %}">
+        <span class="bnav-icon">&#9906;</span> Area
+      </a>
+      <a href="/company/preferences" class="{% if active_page == 'preferences' %}active{% endif %}">
+        <span class="bnav-icon">&#9881;</span> Prefs
+      </a>
+      <a href="/company/purchases" class="{% if active_page == 'purchases' %}active{% endif %}">
+        <span class="bnav-icon">&#9733;</span> Leads
+      </a>
+      <a href="/company/account" class="{% if active_page == 'account' %}active{% endif %}">
+        <span class="bnav-icon">&#9998;</span> Account
+      </a>
+    </nav>
+
+    {% block footer %}{% endblock %}
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

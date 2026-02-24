@@ -1,0 +1,99 @@
+{% extends "base_company.html" %}
+
+{% block title %}Lead Preview{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Lead Preview</h1>
+    <p>Review this lead before purchasing. Full details will be unlocked after payment.</p>
+  </div>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-label">Move Summary</div>
+    <ul class="detail-list">
+      <li>
+        <span class="detail-key">Pickup Area</span>
+        <span class="detail-val">
+          {% if lead.pickup and lead.pickup.postcode %}
+            {{ lead.pickup.postcode.split(' ')[0] }} area
+          {% else %}
+            N/A
+          {% endif %}
+        </span>
+      </li>
+      <li>
+        <span class="detail-key">Dropoff Area</span>
+        <span class="detail-val">
+          {% if lead.dropoff and lead.dropoff.postcode %}
+            {{ lead.dropoff.postcode.split(' ')[0] }} area
+          {% else %}
+            N/A
+          {% endif %}
+        </span>
+      </li>
+      <li>
+        <span class="detail-key">Property Type</span>
+        <span class="detail-val">{{ lead.property_type or 'Not specified' }}</span>
+      </li>
+      <li>
+        <span class="detail-key">Move Date</span>
+        <span class="detail-val">
+          {% if lead.move_date %}
+            {{ lead.move_date.strftime('%d %b %Y') }}
+          {% else %}
+            Flexible
+          {% endif %}
+        </span>
+      </li>
+      <li>
+        <span class="detail-key">Total Items</span>
+        <span class="detail-val">{{ lead.total_items }}</span>
+      </li>
+      <li>
+        <span class="detail-key">Total Volume</span>
+        <span class="detail-val">{{ lead.total_cbm }} CBM</span>
+      </li>
+      <li>
+        <span class="detail-key">Estimate Range</span>
+        <span class="detail-val">
+          {% if lead.estimate_low and lead.estimate_high %}
+            &pound;{{ lead.estimate_low }} &ndash; &pound;{{ lead.estimate_high }}
+          {% else %}
+            Pending
+          {% endif %}
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Redacted info notice -->
+  <div class="alert alert-info">
+    Customer name, full addresses, phone number, email, and photos are hidden until purchase.
+  </div>
+
+  <!-- Price and buy button -->
+  <div class="price-display">
+    <div class="price-amount">{{ lead_price_display }}</div>
+    <div class="price-label">One-time lead purchase</div>
+  </div>
+
+  <form method="POST" action="/company/leads/{{ lead.id }}/purchase">
+    <button type="submit" class="btn btn-primary btn-block btn-lg">
+      Buy This Lead &ndash; {{ lead_price_display }}
+    </button>
+  </form>
+
+  <p class="text-center text-muted text-sm mt-2">
+    You will be charged via your Stripe payment method on file.
+  </p>
+
+  <div class="mt-3">
+    <a href="/company/dashboard" class="btn btn-secondary btn-block">Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

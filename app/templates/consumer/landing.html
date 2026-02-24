@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PrimeHaul - Free Moving Quote in 5 Minutes | UK Removal Estimates</title>
+  <meta name="description" content="Get a free, instant moving estimate powered by AI. Snap photos of your rooms and receive quotes from trusted local removal companies across the UK.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://www.primehaul.co.uk/">
+  <meta property="og:title" content="PrimeHaul - Free Moving Quote in 5 Minutes">
+  <meta property="og:description" content="AI-powered moving estimates. Snap photos, get an instant quote, and compare prices from local removal companies.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.primehaul.co.uk/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "PrimeHaul",
+    "description": "Free AI-powered moving estimate tool. Upload room photos and get instant removal cost estimates with quotes from local UK companies.",
+    "url": "https://www.primehaul.co.uk/",
+    "applicationCategory": "Moving & Removal Services",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "GBP",
+      "description": "Free moving estimate and quotes from local removal companies"
+    },
+    "areaServed": {
+      "@type": "Country",
+      "name": "United Kingdom"
+    },
+    "provider": {
+      "@type": "Organization",
+      "name": "PrimeHaul",
+      "url": "https://www.primehaul.co.uk/"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How accurate are the moving estimates?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Our AI analyses your room photos to identify furniture and belongings, then calculates volume and weight. Estimates are typically within 10-15% of final quotes. The removal companies will provide firm quotes after reviewing your inventory."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is PrimeHaul really free to use?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, completely free. There is no charge for getting your estimate or receiving quotes from removal companies. We are paid by the removal companies, not by you."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does PrimeHaul work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Simply tell us your collection and delivery addresses, take photos of each room you are moving, and our AI will generate a detailed inventory and cost estimate. We then connect you with trusted local removal companies who will provide firm quotes."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Who will contact me after I submit my details?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Only vetted, trusted removal companies in your local area will receive your request. You will typically hear from 2-4 companies within 24 hours with firm quotes for your move."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --card: #141416;
+      --card-border: rgba(255,255,255,0.06);
+      --text: #ffffff;
+      --text-muted: #8a8a8e;
+      --accent: #2ee59d;
+      --accent-glow: rgba(46,229,157,0.15);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --glass-bg: rgba(20,20,22,0.7);
+      --glass-border: rgba(255,255,255,0.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAV */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(11,11,12,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--card-border);
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+      height: 60px;
+    }
+    .logo {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .nav-cta {
+      display: inline-block;
+      padding: 0.5rem 1.25rem;
+      background: var(--accent);
+      color: #0b0b0c;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .nav-cta:hover { opacity: 0.9; }
+
+    /* HERO */
+    .hero {
+      padding: 7rem 1.25rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(46,229,157,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 0.35rem 1rem;
+      background: var(--accent-glow);
+      border: 1px solid rgba(46,229,157,0.2);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 6vw, 3.25rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero h1 .accent { color: var(--accent); }
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto 2rem;
+    }
+    .hero-cta {
+      display: inline-block;
+      padding: 1.1rem 2.5rem;
+      background: var(--accent);
+      color: #0b0b0c;
+      border-radius: var(--radius-sm);
+      font-size: 1.15rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 0 30px rgba(46,229,157,0.2);
+    }
+    .hero-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(46,229,157,0.3);
+    }
+    .hero-cta:active { transform: scale(0.98); }
+    .hero-trust {
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* SECTIONS */
+    .section {
+      padding: 4rem 1.25rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .section-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .section-header h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* HOW IT WORKS */
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .step {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent);
+      color: #0b0b0c;
+      font-weight: 700;
+      font-size: 1.1rem;
+      border-radius: 12px;
+    }
+    .step h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .step p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* BENEFITS */
+    .benefits {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .benefit {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .benefit-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+    .benefit h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+    .benefit p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* FAQ */
+    .faq-list { max-width: 700px; margin: 0 auto; }
+    .faq-item {
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .faq-q {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 1.25rem 0;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+    .faq-q::after {
+      content: '+';
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .faq-item.open .faq-q::after {
+      transform: rotate(45deg);
+      color: var(--accent);
+    }
+    .faq-a {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+    .faq-item.open .faq-a {
+      max-height: 300px;
+      padding-bottom: 1.25rem;
+    }
+    .faq-a p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* BOTTOM CTA */
+    .bottom-cta {
+      text-align: center;
+      padding: 4rem 1.25rem 3rem;
+      position: relative;
+    }
+    .bottom-cta::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(46,229,157,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .bottom-cta h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .bottom-cta p {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    /* FOOTER */
+    .footer {
+      border-top: 1px solid var(--card-border);
+      padding: 2rem 1.25rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* RESPONSIVE */
+    @media (min-width: 640px) {
+      .steps { grid-template-columns: repeat(3, 1fr); }
+      .benefits { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 768px) {
+      .hero { padding: 9rem 1.5rem 5rem; }
+      .benefits { grid-template-columns: repeat(4, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="logo">PrimeHaul</a>
+      <a href="#start" class="nav-cta" id="navCta">Start Free Quote</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="start">
+    <div class="hero-badge">100% Free - No Obligation</div>
+    <h1>Get Your <span class="accent">Free Moving Quote</span> in 5 Minutes</h1>
+    <p class="hero-sub">Snap photos of your rooms, get an AI-powered inventory and instant estimate, then receive quotes from trusted local removal companies.</p>
+    <a href="/start" class="hero-cta" id="heroCta">Start Free Quote</a>
+    <p class="hero-trust">Trusted by thousands of movers across the UK</p>
+  </section>
+
+  <!-- How It Works -->
+  <section class="section">
+    <div class="section-header">
+      <h2>How It Works</h2>
+      <p>Three simple steps to your moving quote</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>Tell us about your move</h3>
+          <p>Enter your collection and delivery addresses, property types, and preferred moving date.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>Snap photos of each room</h3>
+          <p>Take a few quick photos and our AI will identify your furniture and belongings automatically.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>Get your instant estimate</h3>
+          <p>Receive an AI-generated cost estimate and quotes from vetted local removal companies within 24 hours.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits -->
+  <section class="section">
+    <div class="section-header">
+      <h2>Why Use PrimeHaul?</h2>
+      <p>The smarter way to plan your move</p>
+    </div>
+    <div class="benefits">
+      <div class="benefit">
+        <div class="benefit-icon">&#x1F4B7;</div>
+        <h3>Completely Free</h3>
+        <p>No hidden charges, no sign-up fees. Our service is free for you, always.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">&#x1F916;</div>
+        <h3>AI-Powered Accuracy</h3>
+        <p>Our computer vision identifies your items and calculates volume with precision.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">&#x26A1;</div>
+        <h3>Instant Estimate</h3>
+        <p>Get a cost estimate in minutes, not days. No waiting for surveyors to visit.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">&#x2705;</div>
+        <h3>Trusted Companies</h3>
+        <p>We only work with vetted, reputable removal companies across the UK.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section">
+    <div class="section-header">
+      <h2>Frequently Asked Questions</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" type="button">How accurate are the estimates?</button>
+        <div class="faq-a">
+          <p>Our AI analyses your room photos to identify furniture and belongings, then calculates volume and weight. Estimates are typically within 10-15% of final quotes. The removal companies will provide firm quotes after reviewing your inventory.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">Is it really free?</button>
+        <div class="faq-a">
+          <p>Yes, completely free. There is no charge for getting your estimate or receiving quotes from removal companies. We are paid by the removal companies, not by you. There is no obligation to accept any quote.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">How does PrimeHaul work?</button>
+        <div class="faq-a">
+          <p>Simply enter your collection and delivery addresses, take photos of each room you are moving, and our AI will generate a detailed inventory and cost estimate. We then share your requirements with trusted local removal companies who will contact you with firm quotes.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">Who will contact me?</button>
+        <div class="faq-a">
+          <p>Only vetted, trusted removal companies in your local area will receive your request. You will typically hear from 2-4 companies within 24 hours with firm quotes for your move. You are under no obligation to accept any quote.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">What areas of the UK do you cover?</button>
+        <div class="faq-a">
+          <p>PrimeHaul covers all of England, Scotland, and Wales. We have a network of removal companies across the country, from local moves within a city to long-distance relocations.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">How many photos do I need to take?</button>
+        <div class="faq-a">
+          <p>We recommend 2-4 photos per room to capture all your belongings. The more angles you cover, the more accurate your inventory and estimate will be. You can take up to 6 photos per room.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section class="bottom-cta">
+    <h2>Ready to get your free quote?</h2>
+    <p>It takes less than 5 minutes. No obligation, no hassle.</p>
+    <a href="/start" class="hero-cta" id="bottomCta">Start Free Quote</a>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>&copy; {{ now().year if now is defined else "2026" }} PrimeHaul Ltd. All rights reserved.</p>
+  </footer>
+
+  <script>
+    (function() {
+      // Capture UTM parameters and pass them through on CTA links
+      var params = new URLSearchParams(window.location.search);
+      var utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+      var utmParams = new URLSearchParams();
+      var hasUtm = false;
+
+      utmKeys.forEach(function(key) {
+        var val = params.get(key);
+        if (val) {
+          utmParams.set(key, val);
+          hasUtm = true;
+        }
+      });
+
+      if (hasUtm) {
+        var suffix = '?' + utmParams.toString();
+        var ctaLinks = document.querySelectorAll('#heroCta, #bottomCta, #navCta');
+        ctaLinks.forEach(function(link) {
+          var href = link.getAttribute('href');
+          // Strip any anchor hash for the nav CTA
+          if (href.charAt(0) === '#') return;
+          link.setAttribute('href', '/start' + suffix);
+        });
+      }
+
+      // FAQ accordion
+      var faqItems = document.querySelectorAll('.faq-item');
+      faqItems.forEach(function(item) {
+        var btn = item.querySelector('.faq-q');
+        btn.addEventListener('click', function() {
+          var isOpen = item.classList.contains('open');
+          // Close all
+          faqItems.forEach(function(fi) { fi.classList.remove('open'); });
+          // Toggle clicked
+          if (!isOpen) item.classList.add('open');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

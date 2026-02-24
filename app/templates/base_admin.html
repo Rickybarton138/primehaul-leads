@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Admin{% endblock %} - PrimeHaul Admin</title>
+  <link rel="stylesheet" href="/static/app.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="app">
+    <!-- Top navigation -->
+    <header class="nav">
+      <div class="nav-wide">
+        <div class="nav-left">
+          <a href="/admin/dashboard" class="logo">PrimeHaul <span class="logo-sub">Admin</span></a>
+        </div>
+        <div class="nav-right">
+          <a href="/admin/logout" class="btn btn-ghost btn-sm">Logout</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- Desktop sidebar -->
+      <aside class="sidebar">
+        <ul class="sidebar-nav">
+          <li>
+            <a href="/admin/dashboard" class="{% if active_page == 'dashboard' %}active{% endif %}">
+              <span class="nav-icon">&#9632;</span> Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="/admin/leads" class="{% if active_page == 'leads' %}active{% endif %}">
+              <span class="nav-icon">&#9776;</span> Leads
+            </a>
+          </li>
+          <li>
+            <a href="/admin/companies" class="{% if active_page == 'companies' %}active{% endif %}">
+              <span class="nav-icon">&#9875;</span> Companies
+            </a>
+          </li>
+          <li>
+            <a href="/admin/pricing" class="{% if active_page == 'pricing' %}active{% endif %}">
+              <span class="nav-icon">&#163;</span> Pricing
+            </a>
+          </li>
+          <li>
+            <a href="/admin/revenue" class="{% if active_page == 'revenue' %}active{% endif %}">
+              <span class="nav-icon">&#9830;</span> Revenue
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Main content -->
+      <main class="main">
+        {% if flash_messages is defined %}
+          {% for cat, msg in flash_messages %}
+            <div class="alert alert-{{ cat }} slide-up">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    <!-- Mobile bottom nav -->
+    <nav class="bottom-nav hide-desktop">
+      <a href="/admin/dashboard" class="{% if active_page == 'dashboard' %}active{% endif %}">
+        <span class="bnav-icon">&#9632;</span> Home
+      </a>
+      <a href="/admin/leads" class="{% if active_page == 'leads' %}active{% endif %}">
+        <span class="bnav-icon">&#9776;</span> Leads
+      </a>
+      <a href="/admin/companies" class="{% if active_page == 'companies' %}active{% endif %}">
+        <span class="bnav-icon">&#9875;</span> Co.
+      </a>
+      <a href="/admin/pricing" class="{% if active_page == 'pricing' %}active{% endif %}">
+        <span class="bnav-icon">&#163;</span> Price
+      </a>
+      <a href="/admin/revenue" class="{% if active_page == 'revenue' %}active{% endif %}">
+        <span class="bnav-icon">&#9830;</span> Rev.
+      </a>
+    </nav>
+
+    {% block footer %}{% endblock %}
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

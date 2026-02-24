@@ -1,0 +1,85 @@
+{% extends "base_company.html" %}
+
+{% block title %}Preferences{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Lead Preferences</h1>
+    <p>Choose the types of leads you want to receive.</p>
+  </div>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+  {% if success %}
+    <div class="alert alert-success">{{ success }}</div>
+  {% endif %}
+
+  {% set selected_types = company.pref_property_types or [] %}
+
+  <form method="POST" action="/company/preferences">
+    <!-- Property types -->
+    <div class="card">
+      <div class="card-label">Property Types</div>
+      <p class="text-muted text-sm mb-2">Select the property types you can handle.</p>
+
+      <div class="tile-grid">
+        {% for ptype in ['House', 'Flat', 'Maisonette', 'Bungalow', 'Studio', 'Office', 'Storage', 'Other'] %}
+        <label class="tile {% if ptype in selected_types %}selected{% endif %}" id="tile-{{ ptype }}">
+          <input type="checkbox" name="property_types" value="{{ ptype }}"
+                 {% if ptype in selected_types %}checked{% endif %}
+                 style="display:none"
+                 onchange="this.closest('.tile').classList.toggle('selected', this.checked)">
+          <span style="font-size:0.9rem; font-weight:500;">{{ ptype }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- CBM range -->
+    <div class="card">
+      <div class="card-label">Volume Range (CBM)</div>
+      <p class="text-muted text-sm mb-2">Set the minimum and maximum move size you want to receive.</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="min_cbm">Min CBM</label>
+          <input type="number" id="min_cbm" name="min_cbm" class="form-input"
+                 placeholder="0" step="0.5" min="0"
+                 value="{{ company.pref_min_cbm or '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="max_cbm">Max CBM</label>
+          <input type="number" id="max_cbm" name="max_cbm" class="form-input"
+                 placeholder="No limit" step="0.5" min="0"
+                 value="{{ company.pref_max_cbm or '' }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification preferences -->
+    <div class="card">
+      <div class="card-label">Notifications</div>
+      <p class="text-muted text-sm mb-2">Where should we send lead notifications?</p>
+
+      <div class="form-group">
+        <label class="form-label" for="notification_email">Notification Email</label>
+        <input type="email" id="notification_email" name="notification_email" class="form-input"
+               placeholder="{{ company.email }}"
+               value="{{ company.pref_notification_email or '' }}">
+        <p class="form-hint">Defaults to your account email if left blank.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="notification_phone">Notification Phone (SMS)</label>
+        <input type="tel" id="notification_phone" name="notification_phone" class="form-input"
+               placeholder="07700 900000"
+               value="{{ company.pref_notification_phone or '' }}">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block btn-lg">Save Preferences</button>
+  </form>
+</div>
+{% endblock %}

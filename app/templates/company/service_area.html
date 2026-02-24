@@ -1,0 +1,155 @@
+{% extends "base_company.html" %}
+
+{% block title %}Service Area{% endblock %}
+
+{% block head %}
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<style>
+  #map {
+    width: 100%;
+    height: 360px;
+    border-radius: var(--radius);
+    border: 1px solid var(--glass-border);
+    margin-bottom: 1rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Service Area</h1>
+    <p>Set your base location and how far you are willing to travel for jobs.</p>
+  </div>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+  {% if success %}
+    <div class="alert alert-success">{{ success }}</div>
+  {% endif %}
+
+  <form method="POST" action="/company/service-area" id="serviceAreaForm">
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label" for="base_postcode">Base Postcode</label>
+        <input type="text" id="base_postcode" name="base_postcode" class="form-input"
+               placeholder="e.g. SW1A 1AA"
+               value="{{ company.base_postcode or '' }}" required>
+        <p class="form-hint">Your company's main depot or office postcode.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="service_radius">
+          Service Radius: <span class="range-value" id="radiusDisplay">{{ company.service_radius_miles or 30 }}</span> miles
+        </label>
+        <input type="range" id="service_radius" name="service_radius_miles" class="form-range"
+               min="5" max="100" step="5"
+               value="{{ company.service_radius_miles or 30 }}">
+        <div class="d-flex flex-between text-muted text-sm mt-1">
+          <span>5 mi</span>
+          <span>100 mi</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div id="map"></div>
+
+    <button type="submit" class="btn btn-primary btn-block btn-lg">Save Service Area</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<script>
+(function() {
+  mapboxgl.accessToken = '{{ mapbox_token }}';
+
+  var lat = {{ company.base_lat or 51.5074 }};
+  var lng = {{ company.base_lng or -0.1278 }};
+  var radius = {{ company.service_radius_miles or 30 }};
+
+  var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/dark-v11',
+    center: [lng, lat],
+    zoom: 8
+  });
+
+  var marker = new mapboxgl.Marker({ color: '#2ee59d' })
+    .setLngLat([lng, lat])
+    .addTo(map);
+
+  function milesToKm(mi) { return mi * 1.60934; }
+
+  function createCircle(center, radiusMiles, points) {
+    var km = milesToKm(radiusMiles);
+    var coords = [];
+    for (var i = 0; i <= (points || 64); i++) {
+      var angle = (i / (points || 64)) * 2 * Math.PI;
+      var dx = km * Math.cos(angle);
+      var dy = km * Math.sin(angle);
+      var dlat = dy / 111.32;
+      var dlng = dx / (111.32 * Math.cos(center[1] * Math.PI / 180));
+      coords.push([center[0] + dlng, center[1] + dlat]);
+    }
+    return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] } };
+  }
+
+  map.on('load', function() {
+    map.addSource('radius', {
+      type: 'geojson',
+      data: createCircle([lng, lat], radius)
+    });
+    map.addLayer({
+      id: 'radius-fill',
+      type: 'fill',
+      source: 'radius',
+      paint: { 'fill-color': '#2ee59d', 'fill-opacity': 0.1 }
+    });
+    map.addLayer({
+      id: 'radius-border',
+      type: 'line',
+      source: 'radius',
+      paint: { 'line-color': '#2ee59d', 'line-width': 2, 'line-opacity': 0.6 }
+    });
+  });
+
+  function updateCircle() {
+    var src = map.getSource('radius');
+    if (src) {
+      src.setData(createCircle([lng, lat], radius));
+    }
+  }
+
+  // Slider updates
+  var slider = document.getElementById('service_radius');
+  var display = document.getElementById('radiusDisplay');
+  slider.addEventListener('input', function() {
+    radius = parseInt(this.value);
+    display.textContent = radius;
+    updateCircle();
+  });
+
+  // Geocode postcode on blur
+  var postcodeInput = document.getElementById('base_postcode');
+  postcodeInput.addEventListener('blur', function() {
+    var pc = this.value.trim();
+    if (!pc) return;
+    fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(pc + ', UK') + '.json?access_token=' + mapboxgl.accessToken + '&limit=1')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.features && data.features.length > 0) {
+          var c = data.features[0].center;
+          lng = c[0]; lat = c[1];
+          map.flyTo({ center: [lng, lat], zoom: 9 });
+          marker.setLngLat([lng, lat]);
+          updateCircle();
+        }
+      });
+  });
+})();
+</script>
+{% endblock %}

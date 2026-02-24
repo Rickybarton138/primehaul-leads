@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Property Type - PrimeHaul{% endblock %}
+
+{% set progress = 20 %}
+
+{% block head %}
+<style>
+  .prop-section + .prop-section { margin-top: 2rem; }
+  .tile-grid { grid-template-columns: repeat(3, 1fr); }
+  .tile-icon { font-size: 1.6rem; }
+  .tile-label { font-size: 0.8rem; font-weight: 500; }
+  @media (min-width: 400px) {
+    .tile { padding: 1rem 0.5rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="screen-title">Property type</h1>
+<p class="screen-subtitle">Select the property type at each end of your move</p>
+
+<form id="propForm" method="POST" action="/survey/{{ token }}/property">
+  <input type="hidden" name="pickup_property" id="pickup_property" value="">
+  <input type="hidden" name="dropoff_property" id="dropoff_property" value="">
+
+  <!-- Collection property -->
+  <div class="prop-section">
+    <div class="card">
+      <div class="card-label">Collection property</div>
+      <div class="tile-grid" id="pickup-tiles">
+        <div class="tile" data-group="pickup" data-value="flat">
+          <span class="tile-icon">&#127970;</span>
+          <span class="tile-label">Flat</span>
+        </div>
+        <div class="tile" data-group="pickup" data-value="house">
+          <span class="tile-icon">&#127968;</span>
+          <span class="tile-label">House</span>
+        </div>
+        <div class="tile" data-group="pickup" data-value="maisonette">
+          <span class="tile-icon">&#127976;</span>
+          <span class="tile-label">Maisonette</span>
+        </div>
+        <div class="tile" data-group="pickup" data-value="bungalow">
+          <span class="tile-icon">&#127969;</span>
+          <span class="tile-label">Bungalow</span>
+        </div>
+        <div class="tile" data-group="pickup" data-value="storage">
+          <span class="tile-icon">&#128230;</span>
+          <span class="tile-label">Storage</span>
+        </div>
+        <div class="tile" data-group="pickup" data-value="office">
+          <span class="tile-icon">&#127963;</span>
+          <span class="tile-label">Office</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delivery property -->
+  <div class="prop-section">
+    <div class="card">
+      <div class="card-label">Delivery property</div>
+      <div class="tile-grid" id="dropoff-tiles">
+        <div class="tile" data-group="dropoff" data-value="flat">
+          <span class="tile-icon">&#127970;</span>
+          <span class="tile-label">Flat</span>
+        </div>
+        <div class="tile" data-group="dropoff" data-value="house">
+          <span class="tile-icon">&#127968;</span>
+          <span class="tile-label">House</span>
+        </div>
+        <div class="tile" data-group="dropoff" data-value="maisonette">
+          <span class="tile-icon">&#127976;</span>
+          <span class="tile-label">Maisonette</span>
+        </div>
+        <div class="tile" data-group="dropoff" data-value="bungalow">
+          <span class="tile-icon">&#127969;</span>
+          <span class="tile-label">Bungalow</span>
+        </div>
+        <div class="tile" data-group="dropoff" data-value="storage">
+          <span class="tile-icon">&#128230;</span>
+          <span class="tile-label">Storage</span>
+        </div>
+        <div class="tile" data-group="dropoff" data-value="office">
+          <span class="tile-icon">&#127963;</span>
+          <span class="tile-label">Office</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var pickupVal = '';
+  var dropoffVal = '';
+
+  function selectTile(tile) {
+    var group = tile.getAttribute('data-group');
+    var value = tile.getAttribute('data-value');
+
+    // Deselect siblings
+    var siblings = document.querySelectorAll('.tile[data-group="' + group + '"]');
+    siblings.forEach(function(s) { s.classList.remove('selected'); });
+
+    // Select this one
+    tile.classList.add('selected');
+
+    // Set hidden input
+    document.getElementById(group + '_property').value = value;
+
+    if (group === 'pickup') {
+      pickupVal = value;
+    } else {
+      dropoffVal = value;
+    }
+
+    // Auto-advance after both selected
+    if (pickupVal && dropoffVal) {
+      setTimeout(function() {
+        document.getElementById('propForm').submit();
+      }, 300);
+    }
+  }
+
+  var tiles = document.querySelectorAll('.tile');
+  tiles.forEach(function(tile) {
+    tile.addEventListener('click', function() {
+      selectTile(tile);
+    });
+  });
+})();
+</script>
+{% endblock %}

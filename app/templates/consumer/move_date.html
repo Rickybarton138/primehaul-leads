@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Moving Date - PrimeHaul{% endblock %}
+
+{% set progress = 45 %}
+
+{% block head %}
+<style>
+  .date-input-wrap {
+    position: relative;
+  }
+  .date-input-wrap input[type="date"] {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 1.05rem;
+    font-family: inherit;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .date-input-wrap input[type="date"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+  }
+  .flexible-wrap {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .flexible-wrap:hover {
+    background: rgba(255,255,255,0.05);
+  }
+  .flexible-wrap input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .flexible-wrap .flex-text {
+    font-size: 0.95rem;
+  }
+  .flexible-wrap .flex-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+  .date-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="screen-title">When are you moving?</h1>
+<p class="screen-subtitle">Select your preferred moving date</p>
+
+<form id="dateForm" method="POST" action="/survey/{{ token }}/move-date">
+  <div class="card">
+    <div class="card-label">Moving date</div>
+
+    <div class="date-input-wrap">
+      <input type="date" name="move_date" id="move_date" required>
+    </div>
+    <p class="date-hint">Midweek moves are often cheaper than weekends</p>
+
+    <label class="flexible-wrap">
+      <input type="checkbox" name="flexible" id="flexible" value="1">
+      <div>
+        <div class="flex-text">My dates are flexible</div>
+        <div class="flex-hint">Removal companies may offer better rates for flexible dates</div>
+      </div>
+    </label>
+  </div>
+
+  <div class="bottom-actions">
+    <button type="submit" class="btn btn-primary" id="continueBtn" disabled>Continue</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var dateInput = document.getElementById('move_date');
+  var continueBtn = document.getElementById('continueBtn');
+
+  // Set minimum date to today
+  var today = new Date();
+  var yyyy = today.getFullYear();
+  var mm = String(today.getMonth() + 1).padStart(2, '0');
+  var dd = String(today.getDate()).padStart(2, '0');
+  dateInput.setAttribute('min', yyyy + '-' + mm + '-' + dd);
+
+  dateInput.addEventListener('change', function() {
+    continueBtn.disabled = !dateInput.value;
+  });
+})();
+</script>
+{% endblock %}
