@@ -5,12 +5,17 @@ import sys
 import subprocess
 from sqlalchemy import create_engine, text
 
+sys.path.insert(0, os.path.dirname(__file__))
+from app.db_utils import normalize_database_url
+
 
 def main():
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
         print("ERROR: DATABASE_URL environment variable not set")
         sys.exit(1)
+
+    database_url = normalize_database_url(database_url)
 
     print("Checking database state...")
     engine = create_engine(database_url)
@@ -29,13 +34,13 @@ def main():
 
             if tables_exist and not alembic_exists:
                 print("Tables exist but no alembic_version - stamping to latest...")
-                subprocess.run(["alembic", "stamp", "head"], check=True)
+                subprocess.run([sys.executable, "-m", "alembic", "stamp", "head"], check=True)
             elif not tables_exist:
                 print("Fresh database - running all migrations...")
-                subprocess.run(["alembic", "upgrade", "head"], check=True)
+                subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True)
             else:
                 print("Running pending migrations...")
-                subprocess.run(["alembic", "upgrade", "head"], check=True)
+                subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True)
 
     except Exception as e:
         print(f"FATAL: Database setup error: {e}")
