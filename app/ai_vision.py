@@ -1,14 +1,20 @@
 import base64
+import io
 import json
 import os
 from typing import Any, Dict, List
 from dotenv import load_dotenv
 
 from openai import OpenAI
+from PIL import Image
 
 load_dotenv()
 
 VISION_MODEL = os.getenv("OPENAI_VISION_MODEL", "gpt-4o-mini")
+
+# Max dimension for images sent to Vision API (smaller = faster + avoids payload limits)
+VISION_MAX_DIMENSION = 1200
+VISION_JPEG_QUALITY = 70
 
 try:
     client = OpenAI()
@@ -19,18 +25,26 @@ except Exception as e:
 
 
 def _img_to_data_url(path: str) -> str:
-    ext = (os.path.splitext(path)[1] or "").lower()
-    mime = "image/jpeg"
-    if ext == ".png":
-        mime = "image/png"
-    elif ext == ".webp":
-        mime = "image/webp"
-    elif ext in (".heic", ".heif"):
-        mime = "image/heic"
+    """Compress and resize image before base64 encoding to avoid payload limits."""
+    img = Image.open(path)
 
-    with open(path, "rb") as f:
-        b64 = base64.b64encode(f.read()).decode("utf-8")
-    return f"data:{mime};base64,{b64}"
+    # Convert to RGB if needed
+    if img.mode in ("RGBA", "P", "LA"):
+        img = img.convert("RGB")
+
+    # Resize if too large
+    max_side = max(img.size)
+    if max_side > VISION_MAX_DIMENSION:
+        ratio = VISION_MAX_DIMENSION / max_side
+        new_size = (int(img.width * ratio), int(img.height * ratio))
+        img = img.resize(new_size, Image.LANCZOS)
+
+    # Compress to JPEG in memory
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=VISION_JPEG_QUALITY, optimize=True)
+    b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+    return f"data:image/jpeg;base64,{b64}"
 
 
 def extract_removal_inventory(image_paths: List[str]) -> Dict[str, Any]:
@@ -136,6 +150,11 @@ def extract_removal_inventory(image_paths: List[str]) -> Dict[str, Any]:
             max_tokens=2000,
         )
     except Exception as e:
+        err_msg = str(e).lower()
+        if "payload" in err_msg or "too large" in err_msg or "content_length" in err_msg:
+            raise Exception(
+                "Photos are too large for analysis. Please upload smaller or fewer images."
+            )
         raise Exception(f"OpenAI API error: {e}")
 
     text = (resp.choices[0].message.content or "").strip()
