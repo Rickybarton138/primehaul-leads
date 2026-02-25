@@ -12,6 +12,7 @@ import pathlib
 import re
 import uuid
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -28,6 +29,7 @@ from app.auth import (
 )
 from app.config import settings
 from app.database import get_db
+from app.rate_limit import limiter
 from app.dependencies import get_current_company
 from app.geo import extract_city_from_label, extract_postcode_area
 from app.models import (
@@ -100,6 +102,7 @@ async def register_form(request: Request):
 # 2. POST /company/register
 # -------------------------------------------------------------------
 @router.post("/company/register", response_class=HTMLResponse)
+@limiter.limit("5/minute")
 async def register_submit(
     request: Request,
     company_name: str = Form(...),
@@ -181,6 +184,7 @@ async def login_form(request: Request):
 # 4. POST /company/login
 # -------------------------------------------------------------------
 @router.post("/company/login", response_class=HTMLResponse)
+@limiter.limit("5/minute")
 async def login_submit(
     request: Request,
     email: str = Form(...),
@@ -220,6 +224,7 @@ async def login_submit(
         value=token,
         httponly=True,
         samesite="lax",
+        secure=settings.APP_ENV != "development",
         max_age=60 * 60 * 24,  # 24 hours
     )
     return response
@@ -331,7 +336,11 @@ async def service_area_submit(
     form = await request.form()
 
     base_postcode = (form.get("base_postcode", "") or "").strip()
-    service_radius_miles = int(form.get("service_radius_miles", 30) or 30)
+    try:
+        service_radius_miles = int(form.get("service_radius_miles", 30) or 30)
+    except (ValueError, TypeError):
+        service_radius_miles = 30
+    service_radius_miles = max(1, min(service_radius_miles, 500))
 
     # Lat/lng may come from hidden form fields populated by client-side JS
     base_lat = form.get("base_lat")
@@ -411,8 +420,8 @@ async def preferences_submit(
     # CBM range
     min_cbm = form.get("min_cbm")
     max_cbm = form.get("max_cbm")
-    company.pref_min_cbm = float(min_cbm) if min_cbm else None
-    company.pref_max_cbm = float(max_cbm) if max_cbm else None
+    company.pref_min_cbm = Decimal(min_cbm) if min_cbm else None
+    company.pref_max_cbm = Decimal(max_cbm) if max_cbm else None
 
     # Property types (checkboxes -> list)
     property_types = form.getlist("property_types")
@@ -568,10 +577,18 @@ async def lead_purchase(
 
         except Exception:
             logger.exception("Stripe checkout session creation failed")
-            # Fall through to dev-mode direct purchase
-            pass
+            raise HTTPException(
+                status_code=502,
+                detail="Payment processing is temporarily unavailable. Please try again later.",
+            )
 
     # --- Dev mode: create purchase directly without Stripe ---
+    if settings.APP_ENV != "development":
+        raise HTTPException(
+            status_code=503,
+            detail="Payment processing is not configured.",
+        )
+
     purchase = LeadPurchase(
         lead_id=lead.id,
         company_id=company.id,

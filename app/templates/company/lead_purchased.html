@@ -159,7 +159,7 @@
         {% if room.photos %}
           <div style="display:flex; gap:0.5rem; overflow-x:auto; margin-bottom:0.75rem; padding-bottom:0.5rem;">
             {% for photo in room.photos %}
-              <img src="/static/uploads/{{ photo.filename }}" alt="{{ room.name }} photo"
+              <img src="/photo/leads/{{ lead.token }}/{{ photo.filename }}" alt="{{ room.name }} photo"
                    style="height:120px; border-radius:var(--radius-sm); object-fit:cover; flex-shrink:0;">
             {% endfor %}
           </div>

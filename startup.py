@@ -38,8 +38,8 @@ def main():
                 subprocess.run(["alembic", "upgrade", "head"], check=True)
 
     except Exception as e:
-        print(f"Database setup error: {e}")
-        print("Attempting to continue anyway...")
+        print(f"FATAL: Database setup error: {e}")
+        sys.exit(1)
 
     print("Database ready!")
 
