@@ -29,9 +29,13 @@ from fastapi.templating import Jinja2Templates
 from PIL import Image
 from sqlalchemy.orm import Session, joinedload
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from app.ai_vision import extract_removal_inventory
 from app.config import settings
 from app.database import get_db
+from app.rate_limit import limiter
 from app.geo import calculate_distance_miles
 from app.models import Lead, LeadItem, LeadPhoto, LeadRoom
 from app.pricing import calculate_lead_estimate, calculate_lead_price_pence
@@ -82,6 +86,10 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Static files
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
@@ -96,6 +104,21 @@ from app.admin_routes import router as admin_router  # noqa: E402
 
 app.include_router(company_router)
 app.include_router(admin_router)
+
+
+# ---------------------------------------------------------------------------
+# Health check
+# ---------------------------------------------------------------------------
+@app.get("/health")
+async def health_check(db: Session = Depends(get_db)):
+    """Liveness / readiness probe — verifies the DB connection is working."""
+    from sqlalchemy import text
+
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "healthy"}
+    except Exception:
+        raise HTTPException(status_code=503, detail="Database unavailable")
 
 
 # ---------------------------------------------------------------------------
@@ -548,7 +571,11 @@ async def survey_room_upload(
             )
         except Exception:
             logger.exception("AI vision extraction failed for room %s", room_id)
-            inventory = {"items": [], "summary": ""}
+            inventory = {
+                "items": [],
+                "summary": "We couldn't automatically identify items from your photos. "
+                "Please add items manually in the review step.",
+            }
 
         # Persist extracted items
         for item_data in inventory.get("items", []):

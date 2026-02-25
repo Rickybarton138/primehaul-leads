@@ -7,7 +7,7 @@ and protected by JWT-based admin authentication (cookie: admin_token).
 """
 
 import pathlib
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
@@ -16,7 +16,9 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, verify_password
+from app.config import settings
 from app.database import get_db
+from app.rate_limit import limiter
 from app.dependencies import get_current_admin
 from app.models import (
     AdminUser,
@@ -47,6 +49,7 @@ async def admin_login_page(request: Request):
 # 2. POST /admin/login -- Authenticate admin, set JWT cookie, redirect
 # ---------------------------------------------------------------------------
 @router.post("/admin/login")
+@limiter.limit("5/minute")
 async def admin_login(
     request: Request,
     email: str = Form(...),
@@ -75,6 +78,7 @@ async def admin_login(
         value=token,
         httponly=True,
         samesite="lax",
+        secure=settings.APP_ENV != "development",
     )
     return response
 
@@ -98,7 +102,7 @@ async def admin_dashboard(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     total_leads = db.query(func.count(Lead.id)).scalar() or 0
 

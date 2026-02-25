@@ -24,3 +24,15 @@ class Settings:
 
 
 settings = Settings()
+
+# Validate critical secrets in production
+if settings.APP_ENV != "development":
+    _missing = [
+        name
+        for name in ("JWT_SECRET_KEY", "STRIPE_SECRET_KEY", "DATABASE_URL")
+        if not getattr(settings, name, "")
+    ]
+    if _missing:
+        raise RuntimeError(
+            f"Missing required secrets for production: {', '.join(_missing)}"
+        )
