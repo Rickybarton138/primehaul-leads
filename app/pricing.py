@@ -1,6 +1,20 @@
 """
-Simplified estimate calculator using fixed platform rates.
-Not per-company - uses UK average removal pricing.
+PrimeHaul Leads -- Pricing module.
+
+This module contains two *intentionally separate* pricing systems:
+
+1. **Consumer estimate** (``calculate_lead_estimate``):
+   Uses hardcoded UK-average constants (BASE_FEE, PRICE_PER_CBM, etc.) to
+   produce a rough price range shown to consumers during the survey.  These
+   are *not* stored in the database and are deliberately independent of what
+   removal companies pay for the lead.
+
+2. **Lead purchase price** (``calculate_lead_price_pence``):
+   Looks up admin-managed ``LeadPricingTier`` rows in the database to
+   determine how much a removal company pays to unlock a lead.  Tiers can
+   be edited from the admin panel (/admin/pricing).
+
+The two systems serve different audiences and should remain decoupled.
 """
 from decimal import Decimal
 from app.geo import calculate_distance_miles

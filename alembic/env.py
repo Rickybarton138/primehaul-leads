@@ -13,15 +13,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 load_dotenv()
 
+from app.db_utils import normalize_database_url
 from app.models import Base
 
 config = context.config
 
 database_url = os.getenv("DATABASE_URL")
 if database_url:
-    # Use psycopg3 driver
-    if database_url.startswith("postgresql://"):
-        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    database_url = normalize_database_url(database_url)
     config.set_main_option("sqlalchemy.url", database_url)
 
 if config.config_file_name is not None:
