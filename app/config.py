@@ -29,7 +29,7 @@ settings = Settings()
 if settings.APP_ENV != "development":
     _missing = [
         name
-        for name in ("JWT_SECRET_KEY", "STRIPE_SECRET_KEY", "DATABASE_URL")
+        for name in ("JWT_SECRET_KEY", "DATABASE_URL")
         if not getattr(settings, name, "")
     ]
     if _missing:
