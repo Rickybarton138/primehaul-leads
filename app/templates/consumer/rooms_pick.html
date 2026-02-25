@@ -237,10 +237,11 @@
     renderChips();
 
     // POST to server
+    var formData = new FormData();
+    formData.append('name', name);
     fetch('/survey/' + token + '/rooms/add', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room_name: name })
+      body: formData
     });
   }
 
@@ -251,10 +252,11 @@
     renderChips();
 
     // POST to server to remove
+    var formData = new FormData();
+    formData.append('name', name);
     fetch('/survey/' + token + '/rooms/remove', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room_name: name })
+      body: formData
     });
   }
 
