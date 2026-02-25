@@ -742,12 +742,14 @@ async def survey_review_post(
 @app.get("/survey/{token}/estimate")
 async def survey_estimate(token: str, request: Request, db: Session = Depends(get_db)):
     lead = get_lead_or_404(token, db)
+    estimate = calculate_lead_estimate(lead)
     return templates.TemplateResponse(
         "consumer/estimate.html",
         {
             "request": request,
             "token": token,
             "lead": lead,
+            "breakdown": estimate.get("breakdown"),
             "progress": PROGRESS["estimate"],
         },
     )
