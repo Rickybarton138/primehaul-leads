@@ -77,6 +77,26 @@ PROGRESS = {
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 UPLOAD_ROOT = BASE_DIR / "static" / "uploads"
 
+
+def _safe_float(val, default=None):
+    """Safely convert AI response values to float for database storage."""
+    if val is None:
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
+
+def _safe_int(val, default=1):
+    """Safely convert AI response values to int for database storage."""
+    if val is None:
+        return default
+    try:
+        return int(float(val))
+    except (ValueError, TypeError):
+        return default
+
 # ---------------------------------------------------------------------------
 # Application factory
 # ---------------------------------------------------------------------------
@@ -89,6 +109,17 @@ app = FastAPI(
 # Rate limiting
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+# Global error handler — log full tracebacks and return a user-friendly page
+@app.exception_handler(500)
+async def internal_error_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled 500 error on %s %s", request.method, request.url.path)
+    return templates.TemplateResponse(
+        "base.html",
+        {"request": request, "error": "Something went wrong. Please try again."},
+        status_code=500,
+    )
 
 # Static files
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -577,26 +608,32 @@ async def survey_room_upload(
                 "Please add items manually in the review step.",
             }
 
-        # Persist extracted items
-        for item_data in inventory.get("items", []):
-            item = LeadItem(
-                room_id=room.id,
-                name=item_data.get("name", "Unknown item"),
-                qty=item_data.get("qty", 1),
-                length_cm=item_data.get("length_cm"),
-                width_cm=item_data.get("width_cm"),
-                height_cm=item_data.get("height_cm"),
-                weight_kg=item_data.get("weight_kg"),
-                cbm=item_data.get("cbm"),
-                bulky=item_data.get("bulky", False),
-                fragile=item_data.get("fragile", False),
-                item_category=item_data.get("item_category"),
-                packing_requirement=item_data.get("packing_requirement"),
-                notes=item_data.get("notes"),
-            )
-            db.add(item)
+        # Persist extracted items (wrap in try/except — AI can return bad data)
+        try:
+            for item_data in inventory.get("items", []):
+                if not isinstance(item_data, dict):
+                    continue
+                item = LeadItem(
+                    room_id=room.id,
+                    name=str(item_data.get("name", "Unknown item"))[:255],
+                    qty=_safe_int(item_data.get("qty"), 1),
+                    length_cm=_safe_float(item_data.get("length_cm")),
+                    width_cm=_safe_float(item_data.get("width_cm")),
+                    height_cm=_safe_float(item_data.get("height_cm")),
+                    weight_kg=_safe_float(item_data.get("weight_kg")),
+                    cbm=_safe_float(item_data.get("cbm")),
+                    bulky=bool(item_data.get("bulky", False)),
+                    fragile=bool(item_data.get("fragile", False)),
+                    item_category=str(item_data.get("item_category", ""))[:50] or None,
+                    packing_requirement=str(item_data.get("packing_requirement", ""))[:50] or None,
+                    notes=str(item_data.get("notes", ""))[:500] or None,
+                )
+                db.add(item)
 
-        room.summary = inventory.get("summary", "")
+            room.summary = str(inventory.get("summary", ""))[:500]
+        except Exception:
+            logger.exception("Failed to persist AI items for room %s", room_id)
+            db.rollback()
 
     db.commit()
 
