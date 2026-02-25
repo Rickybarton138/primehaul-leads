@@ -1,22 +1,41 @@
-"""Database URL normalisation for psycopg3 compatibility."""
+"""Database URL normalisation for psycopg compatibility."""
+
+
+def _detect_driver() -> str:
+    """Return the best available psycopg SQLAlchemy driver prefix."""
+    try:
+        import psycopg  # noqa: F401
+        return "postgresql+psycopg"
+    except ImportError:
+        pass
+    try:
+        import psycopg2  # noqa: F401
+        return "postgresql+psycopg2"
+    except ImportError:
+        pass
+    return "postgresql"
 
 
 def normalize_database_url(url: str) -> str:
-    """Rewrite a PostgreSQL URL to use the psycopg3 (psycopg) driver.
+    """Rewrite a PostgreSQL URL to use the best available driver.
 
-    Handles the common prefixes emitted by hosting providers:
-      - ``postgresql://``  -> ``postgresql+psycopg://``
-      - ``postgresql+psycopg2://`` -> ``postgresql+psycopg://``
-      - ``postgres://`` (legacy) -> ``postgresql+psycopg://``
-
-    Already-correct URLs (``postgresql+psycopg://``) are returned unchanged.
+    Tries psycopg3 first, falls back to psycopg2, then plain postgresql.
+    Handles common prefixes from hosting providers:
+      - ``postgresql://``
+      - ``postgres://`` (legacy)
+      - ``postgresql+psycopg2://``
+      - ``postgresql+psycopg://``
     """
-    if url.startswith("postgresql+psycopg://"):
-        return url
-    if url.startswith("postgresql+psycopg2://"):
-        return url.replace("postgresql+psycopg2://", "postgresql+psycopg://", 1)
-    if url.startswith("postgresql://"):
-        return url.replace("postgresql://", "postgresql+psycopg://", 1)
-    if url.startswith("postgres://"):
-        return url.replace("postgres://", "postgresql+psycopg://", 1)
+    driver = _detect_driver()
+
+    # Strip any existing driver suffix to normalise
+    for prefix in (
+        "postgresql+psycopg://",
+        "postgresql+psycopg2://",
+        "postgresql://",
+        "postgres://",
+    ):
+        if url.startswith(prefix):
+            return url.replace(prefix, f"{driver}://", 1)
+
     return url
