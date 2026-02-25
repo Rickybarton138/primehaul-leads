@@ -2,8 +2,19 @@ import math
 import re
 
 
+def validate_coordinates(lat: float, lng: float) -> bool:
+    """Return True if lat/lng are within valid WGS-84 ranges."""
+    return -90 <= lat <= 90 and -180 <= lng <= 180
+
+
 def calculate_distance_miles(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
-    """Calculate distance between two coordinates using the Haversine formula."""
+    """Calculate distance between two coordinates using the Haversine formula.
+
+    Returns 0.0 if any coordinate is outside the valid WGS-84 range.
+    """
+    if not (validate_coordinates(lat1, lng1) and validate_coordinates(lat2, lng2)):
+        return 0.0
+
     R = 3959  # Earth radius in miles
     lat1_r, lat2_r = math.radians(lat1), math.radians(lat2)
     dlat = math.radians(lat2 - lat1)
