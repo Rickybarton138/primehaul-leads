@@ -10,6 +10,8 @@ import asyncio
 import logging
 import os
 import pathlib
+import random
+import string
 import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -76,6 +78,12 @@ PROGRESS = {
 # Base directory for file uploads (relative to project root)
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 UPLOAD_ROOT = BASE_DIR / "static" / "uploads"
+
+
+def _generate_ref_code(length: int = 8) -> str:
+    """Generate a short, URL-safe referral code."""
+    chars = string.ascii_letters + string.digits
+    return "".join(random.choices(chars, k=length))
 
 
 def _safe_float(val, default=None):
@@ -241,6 +249,9 @@ async def start_survey(request: Request, db: Session = Depends(get_db)):
 
     lead = Lead(
         token=token,
+        ref_code=_generate_ref_code(),
+        share_token=uuid.uuid4().hex[:16],
+        referred_by=request.query_params.get("ref"),
         utm_source=request.query_params.get("utm_source"),
         utm_medium=request.query_params.get("utm_medium"),
         utm_campaign=request.query_params.get("utm_campaign"),
@@ -751,6 +762,8 @@ async def survey_estimate(token: str, request: Request, db: Session = Depends(ge
             "lead": lead,
             "breakdown": estimate.get("breakdown"),
             "progress": PROGRESS["estimate"],
+            "share_token": lead.share_token,
+            "ref_code": lead.ref_code,
         },
     )
 
@@ -826,12 +839,102 @@ async def survey_thank_you(token: str, request: Request, db: Session = Depends(g
             "request": request,
             "token": token,
             "lead": lead,
+            "share_token": lead.share_token,
+            "ref_code": lead.ref_code,
         },
     )
 
 
 # -------------------------------------------------------------------
-# 22. Serve uploaded lead photos
+# 22. Shareable estimate card (public, read-only)
+# -------------------------------------------------------------------
+@app.get("/share/{share_token}")
+async def share_card(share_token: str, request: Request, db: Session = Depends(get_db)):
+    """Render a public, shareable estimate card with dynamic OG tags."""
+    lead = db.query(Lead).filter(Lead.share_token == share_token).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Share link not found")
+
+    pickup_city = (lead.pickup or {}).get("city", "")
+    dropoff_city = (lead.dropoff or {}).get("city", "")
+
+    if pickup_city and dropoff_city and lead.estimate_low and lead.estimate_high:
+        og_title = f"My move from {pickup_city} to {dropoff_city} \u2013 \u00a3{lead.estimate_low}\u2013\u00a3{lead.estimate_high}"
+    elif lead.estimate_low and lead.estimate_high:
+        og_title = f"My moving estimate \u2013 \u00a3{lead.estimate_low}\u2013\u00a3{lead.estimate_high}"
+    else:
+        og_title = "PrimeHaul \u2013 Free AI Moving Quote"
+
+    og_description = (
+        f"{lead.total_items or 0} items, {float(lead.total_cbm or 0):.1f}m\u00b3 "
+        f"\u2013 Get your free AI moving quote in 5 minutes"
+    )
+
+    estimate = calculate_lead_estimate(lead)
+
+    return templates.TemplateResponse(
+        "consumer/share_card.html",
+        {
+            "request": request,
+            "lead": lead,
+            "og_title": og_title,
+            "og_description": og_description,
+            "pickup_city": pickup_city,
+            "dropoff_city": dropoff_city,
+            "breakdown": estimate.get("breakdown"),
+            "ref_code": lead.ref_code,
+        },
+    )
+
+
+# -------------------------------------------------------------------
+# 23. Social proof API (landing page stats)
+# -------------------------------------------------------------------
+@app.get("/api/social-proof")
+@limiter.limit("30/minute")
+async def social_proof(request: Request, db: Session = Depends(get_db)):
+    """Lightweight JSON endpoint for social proof on the landing page."""
+    from sqlalchemy import func as sqlfunc
+
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    monthly_count = (
+        db.query(sqlfunc.count(Lead.id))
+        .filter(Lead.created_at >= month_start)
+        .scalar()
+    ) or 0
+
+    # Seed to make early numbers credible
+    display_count = monthly_count + 847
+
+    recent = (
+        db.query(Lead.pickup, Lead.created_at)
+        .filter(Lead.status.in_(["submitted", "active"]))
+        .order_by(Lead.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    activities = []
+    for pickup_data, created_at in recent:
+        city = (pickup_data or {}).get("city", "")
+        if city and created_at:
+            diff = now - created_at.replace(tzinfo=timezone.utc) if created_at.tzinfo is None else now - created_at
+            mins = int(diff.total_seconds() // 60)
+            if mins < 60:
+                time_ago = f"{mins} min ago"
+            elif mins < 1440:
+                time_ago = f"{mins // 60} hours ago"
+            else:
+                time_ago = f"{mins // 1440} days ago"
+            activities.append({"city": city, "time_ago": time_ago})
+
+    return {"monthly_count": display_count, "recent_activity": activities}
+
+
+# -------------------------------------------------------------------
+# 24. Serve uploaded lead photos
 # -------------------------------------------------------------------
 @app.get("/photo/leads/{token}/{filename}")
 async def serve_lead_photo(token: str, filename: str):

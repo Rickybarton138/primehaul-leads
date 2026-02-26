@@ -94,6 +94,50 @@
     font-weight: 500;
     line-height: 1.3;
   }
+
+  /* Share section */
+  .share-section { margin-top: 1.5rem; }
+  .share-prompt {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+  .share-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  .share-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.7rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid var(--glass-border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    transition: background 0.15s, transform 0.15s;
+  }
+  .share-btn:hover { background: rgba(255,255,255,0.08); }
+  .share-btn:active { transform: scale(0.97); }
+  .share-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .share-whatsapp { border-color: rgba(37,211,102,0.3); }
+  .share-whatsapp:hover { background: rgba(37,211,102,0.1); }
+  .share-facebook { border-color: rgba(59,89,152,0.3); }
+  .share-facebook:hover { background: rgba(59,89,152,0.1); }
+  .share-x { border-color: rgba(255,255,255,0.15); }
+  .share-copy { border-color: rgba(46,229,157,0.2); }
+  .share-copy:hover { background: rgba(46,229,157,0.08); }
+  .share-btn.copied {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 </style>
 {% endblock %}
 
@@ -170,8 +214,68 @@
   </div>
 </div>
 
+<!-- Share your estimate -->
+<div class="card share-section">
+  <div class="card-label">Share your estimate</div>
+  <p class="share-prompt">Impressed by how quick that was? Share with friends!</p>
+  <div class="share-buttons">
+    <a href="#" class="share-btn share-whatsapp" onclick="shareWhatsApp(event)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.357 0-4.542-.804-6.275-2.152l-.44-.352-3.083 1.034 1.034-3.083-.352-.44A9.96 9.96 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+      WhatsApp
+    </a>
+    <a href="#" class="share-btn share-facebook" onclick="shareFacebook(event)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      Facebook
+    </a>
+    <a href="#" class="share-btn share-x" onclick="shareX(event)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      X
+    </a>
+    <button class="share-btn share-copy" onclick="copyShareLink(event)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      Copy Link
+    </button>
+  </div>
+</div>
+
 <!-- CTA -->
 <div class="bottom-actions">
   <a href="/survey/{{ token }}/contact" class="btn btn-primary">Get Quotes from Local Movers</a>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var shareUrl = '{{ request.base_url }}share/{{ share_token }}';
+  var estimateText = '\u00a3{{ lead.estimate_low|int }} - \u00a3{{ lead.estimate_high|int }}';
+  var shareLink = shareUrl + '?ref={{ ref_code }}';
+
+  var whatsappMsg = 'Just got my free AI moving quote in 5 mins - ' + estimateText + '! Try it yourself: ' + shareLink;
+  var twitterMsg = 'Just got my free AI moving quote in 5 minutes - ' + estimateText + '. Pretty impressive! Try it: ' + shareLink;
+
+  window.shareWhatsApp = function(e) {
+    e.preventDefault();
+    window.open('https://wa.me/?text=' + encodeURIComponent(whatsappMsg), '_blank', 'noopener');
+  };
+  window.shareFacebook = function(e) {
+    e.preventDefault();
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(shareLink), '_blank', 'width=600,height=400,noopener');
+  };
+  window.shareX = function(e) {
+    e.preventDefault();
+    window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(twitterMsg), '_blank', 'width=600,height=400,noopener');
+  };
+  window.copyShareLink = function(e) {
+    e.preventDefault();
+    var btn = e.currentTarget;
+    navigator.clipboard.writeText(shareLink).then(function() {
+      btn.classList.add('copied');
+      var orig = btn.innerHTML;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied!';
+      setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
+    });
+  };
+})();
+</script>
 {% endblock %}

@@ -383,6 +383,62 @@
       color: var(--text-muted);
     }
 
+    /* SOCIAL PROOF */
+    .social-proof {
+      padding: 1.25rem 1.25rem;
+      border-top: 1px solid var(--card-border);
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(46,229,157,0.02);
+    }
+    .social-proof-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .proof-counter {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+    .proof-count {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+    .proof-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .proof-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--card-border);
+    }
+    .proof-ticker {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      overflow: hidden;
+      height: 1.4em;
+      position: relative;
+      min-width: 200px;
+    }
+    .proof-ticker-item {
+      position: absolute;
+      white-space: nowrap;
+      animation: tickerSlide 4s ease-in-out forwards;
+    }
+    @keyframes tickerSlide {
+      0% { opacity: 0; transform: translateY(100%); }
+      10% { opacity: 1; transform: translateY(0); }
+      85% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-100%); }
+    }
+
     /* RESPONSIVE */
     @media (min-width: 640px) {
       .steps { grid-template-columns: repeat(3, 1fr); }
@@ -391,6 +447,11 @@
     @media (min-width: 768px) {
       .hero { padding: 9rem 1.5rem 5rem; }
       .benefits { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (max-width: 639px) {
+      .proof-divider { display: none; }
+      .social-proof-inner { flex-direction: column; gap: 0.5rem; }
+      .proof-ticker { min-width: unset; text-align: center; }
     }
   </style>
 </head>
@@ -410,6 +471,18 @@
     <p class="hero-sub">Snap photos of your rooms, get an AI-powered inventory and instant estimate, then receive quotes from trusted local removal companies.</p>
     <a href="/start" class="hero-cta" id="heroCta">Start Free Quote</a>
     <p class="hero-trust">Trusted by thousands of movers across the UK</p>
+  </section>
+
+  <!-- Social Proof -->
+  <section class="social-proof">
+    <div class="social-proof-inner">
+      <div class="proof-counter">
+        <span class="proof-count" id="proofCount">0</span>
+        <span class="proof-label">moves estimated this month</span>
+      </div>
+      <div class="proof-divider"></div>
+      <div class="proof-ticker" id="proofTicker"></div>
+    </div>
   </section>
 
   <!-- How It Works -->
@@ -546,6 +619,13 @@
         }
       });
 
+      // Also capture ref parameter for referral tracking
+      var refVal = params.get('ref');
+      if (refVal) {
+        utmParams.set('ref', refVal);
+        hasUtm = true;
+      }
+
       if (hasUtm) {
         var suffix = '?' + utmParams.toString();
         var ctaLinks = document.querySelectorAll('#heroCta, #bottomCta, #navCta');
@@ -569,6 +649,42 @@
           if (!isOpen) item.classList.add('open');
         });
       });
+
+      // Social proof: animated counter + activity ticker
+      fetch('/api/social-proof')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          // Animated count-up
+          var countEl = document.getElementById('proofCount');
+          if (countEl && data.monthly_count) {
+            var target = data.monthly_count;
+            var duration = 2000;
+            var startTime = null;
+            function animate(ts) {
+              if (!startTime) startTime = ts;
+              var p = Math.min((ts - startTime) / duration, 1);
+              var eased = 1 - Math.pow(1 - p, 3);
+              countEl.textContent = Math.floor(eased * target).toLocaleString();
+              if (p < 1) requestAnimationFrame(animate);
+              else countEl.textContent = target.toLocaleString();
+            }
+            requestAnimationFrame(animate);
+          }
+
+          // Activity ticker
+          var tickerEl = document.getElementById('proofTicker');
+          if (tickerEl && data.recent_activity && data.recent_activity.length > 0) {
+            var idx = 0;
+            function showNext() {
+              var item = data.recent_activity[idx % data.recent_activity.length];
+              tickerEl.innerHTML = '<span class="proof-ticker-item">Someone in ' + item.city + ' got their quote &mdash; ' + item.time_ago + '</span>';
+              idx++;
+            }
+            showNext();
+            setInterval(showNext, 4500);
+          }
+        })
+        .catch(function() {});
     })();
   </script>
 </body>

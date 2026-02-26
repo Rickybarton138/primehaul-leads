@@ -68,6 +68,11 @@ class Lead(Base):
     utm_medium = Column(String(100))
     utm_campaign = Column(String(100))
 
+    # Viral / referral tracking
+    ref_code = Column(String(8), unique=True, index=True)
+    referred_by = Column(String(8), index=True)
+    share_token = Column(String(16), unique=True, index=True)
+
     # Relationships
     rooms = relationship("LeadRoom", back_populates="lead", cascade="all, delete-orphan")
     purchases = relationship("LeadPurchase", back_populates="lead")

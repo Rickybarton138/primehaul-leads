@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ og_title }}</title>
+  <meta name="description" content="{{ og_description }}">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="{{ og_title }}">
+  <meta property="og:description" content="{{ og_description }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:image" content="{{ request.base_url }}static/img/og-share.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="PrimeHaul">
+  <meta property="og:locale" content="en_GB">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ og_title }}">
+  <meta name="twitter:description" content="{{ og_description }}">
+  <meta name="twitter:image" content="{{ request.base_url }}static/img/og-share.png">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #0b0b0c;
+      color: #fff;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .share-page {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .share-card {
+      background: rgba(20,20,22,0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(46,229,157,0.15);
+      border-radius: 24px;
+      padding: 2.25rem 1.75rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        0 0 80px rgba(46,229,157,0.06),
+        0 24px 48px rgba(0,0,0,0.4);
+    }
+
+    /* Radial glow behind card */
+    .share-card::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(46,229,157,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .share-logo {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #2ee59d;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.75rem;
+      position: relative;
+    }
+
+    /* Route section */
+    .share-route {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    .share-city {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+    }
+    .share-arrow {
+      padding: 0.4rem 0;
+      color: #2ee59d;
+      display: flex;
+      justify-content: center;
+    }
+    .share-arrow svg {
+      width: 28px;
+      height: 28px;
+      animation: arrowPulse 2s ease-in-out infinite;
+    }
+    @keyframes arrowPulse {
+      0%, 100% { opacity: 0.6; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(3px); }
+    }
+
+    /* Price hero */
+    .share-price {
+      font-size: clamp(2.5rem, 10vw, 3.5rem);
+      font-weight: 800;
+      color: #2ee59d;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      text-shadow: 0 0 50px rgba(46,229,157,0.2);
+      margin-bottom: 0.3rem;
+      position: relative;
+    }
+    .share-price-label {
+      font-size: 0.72rem;
+      color: #8a8a8e;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Stats pills */
+    .share-stats {
+      display: flex;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-bottom: 1.75rem;
+      flex-wrap: wrap;
+    }
+    .share-stat {
+      padding: 0.5rem 0.9rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      min-width: 72px;
+    }
+    .share-stat-value {
+      display: block;
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .share-stat-label {
+      font-size: 0.68rem;
+      color: #8a8a8e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* CTA button */
+    .share-cta {
+      display: block;
+      padding: 1rem 1.5rem;
+      background: #2ee59d;
+      color: #0b0b0c;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-decoration: none;
+      margin-bottom: 1.25rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 0 30px rgba(46,229,157,0.15);
+    }
+    .share-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(46,229,157,0.25);
+    }
+    .share-cta:active { transform: scale(0.98); }
+
+    .share-footer {
+      font-size: 0.75rem;
+      color: #5a5a5e;
+      letter-spacing: 0.02em;
+    }
+
+    /* Divider */
+    .share-divider {
+      width: 48px;
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+      margin: 0 auto 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="share-page">
+    <div class="share-card">
+      <!-- Logo -->
+      <div class="share-logo">PrimeHaul</div>
+
+      <!-- Route -->
+      {% if pickup_city or dropoff_city %}
+      <div class="share-route">
+        <div class="share-city">{{ pickup_city or 'Collection' }}</div>
+        <div class="share-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <polyline points="19 12 12 19 5 12"></polyline>
+          </svg>
+        </div>
+        <div class="share-city">{{ dropoff_city or 'Delivery' }}</div>
+      </div>
+      {% endif %}
+
+      <!-- Price -->
+      {% if lead.estimate_low and lead.estimate_high %}
+      <div class="share-price">&pound;{{ lead.estimate_low|int }} &ndash; &pound;{{ lead.estimate_high|int }}</div>
+      <div class="share-price-label">AI-powered moving estimate</div>
+      {% else %}
+      <div class="share-price" style="font-size:1.5rem;">Free AI Moving Quote</div>
+      <div class="share-price-label">Get your estimate in 5 minutes</div>
+      {% endif %}
+
+      <!-- Stats -->
+      <div class="share-stats">
+        {% if lead.total_items %}
+        <div class="share-stat">
+          <span class="share-stat-value">{{ lead.total_items }}</span>
+          <span class="share-stat-label">items</span>
+        </div>
+        {% endif %}
+        {% if lead.total_cbm %}
+        <div class="share-stat">
+          <span class="share-stat-value">{{ "%.1f"|format(lead.total_cbm|float) }}</span>
+          <span class="share-stat-label">m&sup3;</span>
+        </div>
+        {% endif %}
+        {% if breakdown and breakdown.van_size %}
+        <div class="share-stat">
+          <span class="share-stat-value">{{ breakdown.van_size }}</span>
+          <span class="share-stat-label">van</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="share-divider"></div>
+
+      <!-- CTA -->
+      <a href="/start?ref={{ ref_code }}&amp;utm_source=share&amp;utm_medium=social" class="share-cta">
+        Get Your Free Quote
+      </a>
+
+      <div class="share-footer">primehaul.co.uk</div>
+    </div>
+  </div>
+</body>
+</html>
