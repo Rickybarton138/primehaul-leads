@@ -43,8 +43,16 @@ def main():
                 subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True)
 
     except Exception as e:
-        print(f"FATAL: Database setup error: {e}")
-        sys.exit(1)
+        print(f"Database setup error: {e}")
+        print("Attempting to continue anyway...")
+
+    # Ensure all model tables exist (covers new models not yet in Alembic)
+    try:
+        from app.models import Base
+        Base.metadata.create_all(engine, checkfirst=True)
+        print("All model tables verified")
+    except Exception as e:
+        print(f"Table creation check error: {e}")
 
     print("Database ready!")
 
