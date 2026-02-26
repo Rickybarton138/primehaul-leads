@@ -1,0 +1,245 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Social Auto-Pilot{% endblock %}
+
+{% block head %}
+<style>
+  .social-stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; margin-bottom:2rem; }
+  .social-stat { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:1.2rem; text-align:center; }
+  .social-stat .val { font-size:2rem; font-weight:700; color:#2ee59d; }
+  .social-stat .lbl { font-size:0.8rem; color:rgba(255,255,255,0.5); margin-top:0.3rem; }
+
+  .actions-bar { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:2rem; }
+  .actions-bar .btn { padding:0.6rem 1.2rem; border-radius:8px; border:none; cursor:pointer; font-size:0.85rem; font-weight:600; }
+  .btn-generate { background:#2ee59d; color:#0b0b0c; }
+  .btn-generate:hover { background:#26cc89; }
+
+  .post-table { width:100%; border-collapse:collapse; }
+  .post-table th { text-align:left; padding:0.8rem 0.6rem; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06); }
+  .post-table td { padding:0.8rem 0.6rem; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.85rem; vertical-align:top; }
+  .post-table tr:hover { background:rgba(255,255,255,0.02); }
+
+  .badge-platform { display:inline-block; padding:0.2rem 0.5rem; border-radius:6px; font-size:0.7rem; font-weight:600; text-transform:uppercase; }
+  .badge-facebook { background:rgba(24,119,242,0.15); color:#1877F2; }
+  .badge-instagram { background:rgba(225,48,108,0.15); color:#E1306C; }
+  .badge-x { background:rgba(255,255,255,0.08); color:#fff; }
+  .badge-linkedin { background:rgba(10,102,194,0.15); color:#0A66C2; }
+
+  .badge-status { display:inline-block; padding:0.2rem 0.5rem; border-radius:6px; font-size:0.7rem; font-weight:600; }
+  .badge-scheduled { background:rgba(46,229,157,0.12); color:#2ee59d; }
+  .badge-published { background:rgba(46,229,157,0.25); color:#2ee59d; }
+  .badge-draft { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.5); }
+  .badge-failed { background:rgba(255,59,48,0.15); color:#ff3b30; }
+
+  .caption-preview { max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:rgba(255,255,255,0.7); }
+  .post-actions form { display:inline; }
+  .post-actions .btn-sm { padding:0.25rem 0.5rem; font-size:0.7rem; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:rgba(255,255,255,0.6); cursor:pointer; }
+  .post-actions .btn-sm:hover { background:rgba(255,255,255,0.05); color:#fff; }
+  .post-actions .btn-publish { border-color:#2ee59d; color:#2ee59d; }
+
+  .engagement-pills { display:flex; gap:0.4rem; flex-wrap:wrap; }
+  .engagement-pill { display:inline-flex; align-items:center; gap:0.2rem; padding:0.15rem 0.4rem; background:rgba(255,255,255,0.04); border-radius:4px; font-size:0.7rem; color:rgba(255,255,255,0.5); }
+
+  .settings-form { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:1.5rem; margin-top:2rem; }
+  .settings-form h3 { margin:0 0 1rem; font-size:1rem; }
+  .settings-row { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:1rem; }
+  .settings-field { flex:1; min-width:180px; }
+  .settings-field label { display:block; font-size:0.8rem; color:rgba(255,255,255,0.5); margin-bottom:0.3rem; }
+  .settings-field input, .settings-field select { width:100%; padding:0.5rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:0.85rem; }
+  .settings-field input:focus, .settings-field select:focus { outline:none; border-color:#2ee59d; }
+
+  .checkbox-row { display:flex; align-items:center; gap:0.5rem; }
+  .checkbox-row input[type="checkbox"] { accent-color:#2ee59d; width:18px; height:18px; }
+
+  .platform-checks { display:flex; gap:1rem; flex-wrap:wrap; }
+  .platform-checks label { display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; cursor:pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Social Auto-Pilot</h1>
+    <p>AI-generated social media content across all platforms.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="social-stats">
+    <div class="social-stat">
+      <div class="val">{{ stats.scheduled }}</div>
+      <div class="lbl">Scheduled</div>
+    </div>
+    <div class="social-stat">
+      <div class="val">{{ stats.published }}</div>
+      <div class="lbl">Published</div>
+    </div>
+    <div class="social-stat">
+      <div class="val">{{ stats.total }}</div>
+      <div class="lbl">Total Posts</div>
+    </div>
+    <div class="social-stat">
+      <div class="val">{{ stats.failed }}</div>
+      <div class="lbl">Failed</div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions-bar">
+    <form method="post" action="/admin/social/generate">
+      <button type="submit" class="btn btn-generate">Generate Batch</button>
+    </form>
+    <div style="flex:1;"></div>
+    <div style="font-size:0.8rem; color:rgba(255,255,255,0.4); align-self:center;">
+      {% if config.last_generation_at %}
+        Last generated: {{ config.last_generation_at.strftime('%d %b %Y %H:%M') }}
+      {% else %}
+        No content generated yet
+      {% endif %}
+      &middot;
+      Auto-publish: <strong style="color:{% if config.auto_publish %}#2ee59d{% else %}#ff3b30{% endif %}">{{ "ON" if config.auto_publish else "OFF" }}</strong>
+    </div>
+  </div>
+
+  <!-- Upcoming Posts -->
+  <div class="card" style="margin-bottom:2rem;">
+    <div class="card-header">
+      <h3>Upcoming Posts</h3>
+    </div>
+    <div class="card-body" style="overflow-x:auto;">
+      {% if upcoming %}
+      <table class="post-table">
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Type</th>
+            <th>Caption</th>
+            <th>Scheduled</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in upcoming %}
+          <tr>
+            <td><span class="badge-platform badge-{{ post.platform }}">{{ post.platform }}</span></td>
+            <td style="color:rgba(255,255,255,0.5); font-size:0.8rem;">{{ post.content_pillar or post.content_type }}</td>
+            <td class="caption-preview" title="{{ post.caption }}">{{ post.caption[:80] }}{% if post.caption|length > 80 %}...{% endif %}</td>
+            <td style="font-size:0.8rem;">
+              {% if post.scheduled_for %}
+                {{ post.scheduled_for.strftime('%d %b %H:%M') }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td><span class="badge-status badge-{{ post.status }}">{{ post.status }}</span></td>
+            <td class="post-actions">
+              <form method="post" action="/admin/social/post/{{ post.id }}/publish">
+                <button type="submit" class="btn-sm btn-publish">Publish</button>
+              </form>
+              <form method="post" action="/admin/social/post/{{ post.id }}/skip">
+                <button type="submit" class="btn-sm">Skip</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="text-muted text-sm">No upcoming posts. Click "Generate Batch" to create content.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recent Published -->
+  <div class="card" style="margin-bottom:2rem;">
+    <div class="card-header">
+      <h3>Recently Published</h3>
+    </div>
+    <div class="card-body" style="overflow-x:auto;">
+      {% if recent %}
+      <table class="post-table">
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Type</th>
+            <th>Caption</th>
+            <th>Published</th>
+            <th>Engagement</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in recent %}
+          <tr>
+            <td><span class="badge-platform badge-{{ post.platform }}">{{ post.platform }}</span></td>
+            <td style="color:rgba(255,255,255,0.5); font-size:0.8rem;">{{ post.content_pillar or post.content_type }}</td>
+            <td class="caption-preview" title="{{ post.caption }}">{{ post.caption[:80] }}{% if post.caption|length > 80 %}...{% endif %}</td>
+            <td style="font-size:0.8rem;">
+              {% if post.published_at %}
+                {{ post.published_at.strftime('%d %b %H:%M') }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if post.engagement %}
+                <div class="engagement-pills">
+                  {% if post.engagement.likes is defined %}<span class="engagement-pill">{{ post.engagement.likes }} likes</span>{% endif %}
+                  {% if post.engagement.comments is defined %}<span class="engagement-pill">{{ post.engagement.comments }} comments</span>{% endif %}
+                  {% if post.engagement.shares is defined %}<span class="engagement-pill">{{ post.engagement.shares }} shares</span>{% endif %}
+                </div>
+              {% else %}
+                <span style="font-size:0.75rem; color:rgba(255,255,255,0.3);">Pending</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="text-muted text-sm">No published posts yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings-form">
+    <h3>Auto-Pilot Settings</h3>
+    <form method="post" action="/admin/social/settings">
+      <div class="settings-row">
+        <div class="settings-field">
+          <label>Posts per day</label>
+          <input type="number" name="posts_per_day" value="{{ config.posts_per_day or 2 }}" min="1" max="10">
+        </div>
+        <div class="settings-field">
+          <label>Posting times (comma-separated)</label>
+          <input type="text" name="posting_times" value="{{ (config.posting_times or ['09:00','18:00']) | join(', ') }}" placeholder="09:00, 18:00">
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-field">
+          <label>Active Platforms</label>
+          <div class="platform-checks">
+            {% set active = config.active_platforms or ['facebook','instagram','x','linkedin'] %}
+            <label><input type="checkbox" name="platforms" value="facebook" {% if 'facebook' in active %}checked{% endif %}> Facebook</label>
+            <label><input type="checkbox" name="platforms" value="instagram" {% if 'instagram' in active %}checked{% endif %}> Instagram</label>
+            <label><input type="checkbox" name="platforms" value="x" {% if 'x' in active %}checked{% endif %}> X</label>
+            <label><input type="checkbox" name="platforms" value="linkedin" {% if 'linkedin' in active %}checked{% endif %}> LinkedIn</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-field">
+          <div class="checkbox-row">
+            <input type="checkbox" name="auto_publish" value="true" id="auto_publish" {% if config.auto_publish %}checked{% endif %}>
+            <label for="auto_publish" style="color:#fff; font-size:0.9rem; cursor:pointer;">Full auto-pilot (publish automatically)</label>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-generate" style="margin-top:0.5rem;">Save Settings</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

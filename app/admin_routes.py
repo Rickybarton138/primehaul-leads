@@ -26,6 +26,14 @@ from app.models import (
     Lead,
     LeadPricingTier,
     LeadPurchase,
+    SocialConfig,
+    SocialPost,
+)
+from app.social_autopilot import (
+    force_generate_batch,
+    manually_publish_post,
+    skip_post,
+    _get_config,
 )
 
 router = APIRouter()
@@ -347,3 +355,135 @@ async def admin_revenue(
             "total_revenue": total_revenue,
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# 12. GET /admin/social -- Social media auto-pilot dashboard
+# ---------------------------------------------------------------------------
+@router.get("/admin/social")
+async def admin_social_dashboard(
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    config = _get_config(db)
+
+    # Stats
+    total_posts = db.query(func.count(SocialPost.id)).scalar() or 0
+    published = (
+        db.query(func.count(SocialPost.id))
+        .filter(SocialPost.status == "published")
+        .scalar() or 0
+    )
+    scheduled = (
+        db.query(func.count(SocialPost.id))
+        .filter(SocialPost.status == "scheduled")
+        .scalar() or 0
+    )
+    failed = (
+        db.query(func.count(SocialPost.id))
+        .filter(SocialPost.status == "failed")
+        .scalar() or 0
+    )
+
+    # Upcoming scheduled posts
+    now = datetime.now(timezone.utc)
+    upcoming = (
+        db.query(SocialPost)
+        .filter(SocialPost.status.in_(["scheduled", "draft"]))
+        .order_by(SocialPost.scheduled_for)
+        .limit(20)
+        .all()
+    )
+
+    # Recently published
+    recent = (
+        db.query(SocialPost)
+        .filter(SocialPost.status == "published")
+        .order_by(SocialPost.published_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "admin/social_dashboard.html",
+        {
+            "request": request,
+            "admin": admin,
+            "active_page": "social",
+            "config": config,
+            "stats": {
+                "total": total_posts,
+                "published": published,
+                "scheduled": scheduled,
+                "failed": failed,
+            },
+            "upcoming": upcoming,
+            "recent": recent,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# 13. POST /admin/social/generate -- Force-generate a new content batch
+# ---------------------------------------------------------------------------
+@router.post("/admin/social/generate")
+async def admin_social_generate(
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    force_generate_batch(db)
+    return RedirectResponse(url="/admin/social", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# 14. POST /admin/social/post/{post_id}/publish -- Manually publish one post
+# ---------------------------------------------------------------------------
+@router.post("/admin/social/post/{post_id}/publish")
+async def admin_social_publish(
+    post_id: str,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    manually_publish_post(db, post_id)
+    return RedirectResponse(url="/admin/social", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# 15. POST /admin/social/post/{post_id}/skip -- Move to drafts
+# ---------------------------------------------------------------------------
+@router.post("/admin/social/post/{post_id}/skip")
+async def admin_social_skip(
+    post_id: str,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    skip_post(db, post_id)
+    return RedirectResponse(url="/admin/social", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# 16. POST /admin/social/settings -- Update social config
+# ---------------------------------------------------------------------------
+@router.post("/admin/social/settings")
+async def admin_social_settings(
+    request: Request,
+    posts_per_day: int = Form(2),
+    auto_publish: bool = Form(False),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    config = _get_config(db)
+    config.posts_per_day = posts_per_day
+    config.auto_publish = auto_publish
+
+    form = await request.form()
+    times_raw = form.get("posting_times", "09:00,18:00")
+    config.posting_times = [t.strip() for t in times_raw.split(",") if t.strip()]
+
+    platforms = form.getlist("platforms")
+    if platforms:
+        config.active_platforms = platforms
+
+    db.commit()
+    return RedirectResponse(url="/admin/social", status_code=303)

@@ -272,3 +272,55 @@ class StripeEvent(Base):
     payload = Column(JSONB, nullable=False)
     processed = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ---------------------------------------------------------------------------
+# Social Media Automation
+# ---------------------------------------------------------------------------
+class SocialPost(Base):
+    __tablename__ = "social_posts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    scheduled_for = Column(DateTime(timezone=True), index=True)
+    published_at = Column(DateTime(timezone=True))
+
+    platform = Column(String(20), nullable=False, index=True)  # facebook/instagram/x/linkedin
+    content_type = Column(String(30))  # tip/stat/promo/seasonal/relatable
+    content_pillar = Column(String(50))
+    caption = Column(Text, nullable=False)
+    hashtags = Column(Text)
+    image_path = Column(Text)
+
+    status = Column(String(20), default="scheduled", index=True)  # draft/scheduled/published/failed
+    platform_post_id = Column(String(255))
+    engagement = Column(JSONB)  # {likes, comments, shares, impressions}
+    error_message = Column(Text)
+
+
+class SocialAccount(Base):
+    __tablename__ = "social_accounts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    platform = Column(String(20), nullable=False, unique=True)
+    account_name = Column(String(255))
+    access_token = Column(Text)
+    refresh_token = Column(Text)
+    token_expires_at = Column(DateTime(timezone=True))
+    page_id = Column(String(255))
+    is_active = Column(Boolean, default=True)
+    last_posted_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SocialConfig(Base):
+    __tablename__ = "social_config"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    posts_per_day = Column(Integer, default=2)
+    posting_times = Column(JSONB, default=lambda: ["09:00", "18:00"])
+    active_platforms = Column(JSONB, default=lambda: ["facebook", "instagram", "x", "linkedin"])
+    content_mix = Column(JSONB, default=lambda: {"tip": 30, "stat": 25, "promo": 25, "seasonal": 10, "relatable": 10})
+    tone = Column(String(50), default="friendly_professional")
+    auto_publish = Column(Boolean, default=True)
+    last_generation_at = Column(DateTime(timezone=True))

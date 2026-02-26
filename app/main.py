@@ -146,6 +146,57 @@ app.include_router(admin_router)
 
 
 # ---------------------------------------------------------------------------
+# Social media auto-pilot scheduler
+# ---------------------------------------------------------------------------
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+
+_scheduler = BackgroundScheduler()
+
+
+@app.on_event("startup")
+def start_social_scheduler():
+    from app.social_autopilot import (
+        generate_weekly_content,
+        publish_due_posts,
+        check_all_engagement,
+    )
+
+    # Generate content batch weekly (Sunday at midnight UTC)
+    _scheduler.add_job(
+        generate_weekly_content,
+        CronTrigger(day_of_week="sun", hour=0, minute=0),
+        id="social_weekly_generate",
+        replace_existing=True,
+    )
+
+    # Publish due posts every 15 minutes
+    _scheduler.add_job(
+        publish_due_posts,
+        CronTrigger(minute="*/15"),
+        id="social_publish_due",
+        replace_existing=True,
+    )
+
+    # Check engagement daily at 3am UTC
+    _scheduler.add_job(
+        check_all_engagement,
+        CronTrigger(hour=3, minute=0),
+        id="social_engagement_check",
+        replace_existing=True,
+    )
+
+    _scheduler.start()
+    logger.info("Social auto-pilot scheduler started")
+
+
+@app.on_event("shutdown")
+def stop_social_scheduler():
+    _scheduler.shutdown(wait=False)
+    logger.info("Social auto-pilot scheduler stopped")
+
+
+# ---------------------------------------------------------------------------
 # Health check
 # ---------------------------------------------------------------------------
 @app.get("/health")

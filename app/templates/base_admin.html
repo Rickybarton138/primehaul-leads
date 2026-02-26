@@ -50,6 +50,11 @@
               <span class="nav-icon">&#9830;</span> Revenue
             </a>
           </li>
+          <li>
+            <a href="/admin/social" class="{% if active_page == 'social' %}active{% endif %}">
+              <span class="nav-icon">&#9733;</span> Social
+            </a>
+          </li>
         </ul>
       </aside>
 
@@ -80,6 +85,9 @@
       </a>
       <a href="/admin/revenue" class="{% if active_page == 'revenue' %}active{% endif %}">
         <span class="bnav-icon">&#9830;</span> Rev.
+      </a>
+      <a href="/admin/social" class="{% if active_page == 'social' %}active{% endif %}">
+        <span class="bnav-icon">&#9733;</span> Social
       </a>
     </nav>
 

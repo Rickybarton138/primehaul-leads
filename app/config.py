@@ -22,6 +22,19 @@ class Settings:
     SMTP_FROM_EMAIL: str = os.getenv("SMTP_FROM_EMAIL", "leads@primehaul.co.uk")
     SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME", "PrimeHaul Leads")
 
+    # Social Media Automation
+    META_PAGE_ACCESS_TOKEN: str = os.getenv("META_PAGE_ACCESS_TOKEN", "")
+    META_PAGE_ID: str = os.getenv("META_PAGE_ID", "")
+    META_INSTAGRAM_ACCOUNT_ID: str = os.getenv("META_INSTAGRAM_ACCOUNT_ID", "")
+    X_API_KEY: str = os.getenv("X_API_KEY", "")
+    X_API_SECRET: str = os.getenv("X_API_SECRET", "")
+    X_ACCESS_TOKEN: str = os.getenv("X_ACCESS_TOKEN", "")
+    X_ACCESS_TOKEN_SECRET: str = os.getenv("X_ACCESS_TOKEN_SECRET", "")
+    LINKEDIN_ACCESS_TOKEN: str = os.getenv("LINKEDIN_ACCESS_TOKEN", "")
+    LINKEDIN_ORG_ID: str = os.getenv("LINKEDIN_ORG_ID", "")
+    SOCIAL_AUTO_PUBLISH: bool = os.getenv("SOCIAL_AUTO_PUBLISH", "true").lower() == "true"
+    SOCIAL_POSTS_PER_DAY: int = int(os.getenv("SOCIAL_POSTS_PER_DAY", "2"))
+
 
 settings = Settings()
 
