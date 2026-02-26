@@ -291,6 +291,11 @@ async def privacy_policy(request: Request):
     return templates.TemplateResponse("consumer/privacy.html", {"request": request})
 
 
+@app.get("/terms")
+async def terms_of_service(request: Request):
+    return templates.TemplateResponse("consumer/terms.html", {"request": request})
+
+
 @app.get("/")
 async def landing(request: Request):
     return templates.TemplateResponse("consumer/landing.html", {"request": request})
