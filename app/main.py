@@ -286,6 +286,11 @@ def _process_and_save_image(
 
 # 1. Landing page
 # -------------------------------------------------------------------
+@app.get("/privacy")
+async def privacy_policy(request: Request):
+    return templates.TemplateResponse("consumer/privacy.html", {"request": request})
+
+
 @app.get("/")
 async def landing(request: Request):
     return templates.TemplateResponse("consumer/landing.html", {"request": request})
