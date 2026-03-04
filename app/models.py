@@ -261,6 +261,40 @@ class AdminUser(Base):
 
 
 # ---------------------------------------------------------------------------
+# Email Log (tracks all emails sent by the platform)
+# ---------------------------------------------------------------------------
+class EmailLog(Base):
+    __tablename__ = "email_logs"
+    __table_args__ = (
+        Index("idx_email_logs_sent_at", "sent_at"),
+        Index("idx_email_logs_email_type", "email_type"),
+        Index("idx_email_logs_to_email", "to_email"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    to_email = Column(String(255), nullable=False)
+    subject = Column(String(500), nullable=False)
+    email_type = Column(
+        String(50), nullable=False
+    )  # customer_confirmation / lead_alert / purchase_confirmation / manual
+    status = Column(String(20), nullable=False)  # sent / failed / skipped
+    error_message = Column(Text)
+    sent_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Optional FKs to related entities
+    lead_id = Column(UUID(as_uuid=True), ForeignKey("leads.id"), nullable=True)
+    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), nullable=True)
+    sent_by_admin_id = Column(
+        UUID(as_uuid=True), ForeignKey("admin_users.id"), nullable=True
+    )
+
+    # Relationships
+    lead = relationship("Lead")
+    company = relationship("Company")
+    sent_by_admin = relationship("AdminUser")
+
+
+# ---------------------------------------------------------------------------
 # Stripe Events (webhook audit log)
 # ---------------------------------------------------------------------------
 class StripeEvent(Base):

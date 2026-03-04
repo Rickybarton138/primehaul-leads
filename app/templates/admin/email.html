@@ -1,0 +1,207 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Email{% endblock %}
+
+{% block head %}
+<style>
+  .email-stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; margin-bottom:2rem; }
+  .email-stat { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:1.2rem; text-align:center; }
+  .email-stat .val { font-size:2rem; font-weight:700; color:#2ee59d; }
+  .email-stat .val-red { font-size:2rem; font-weight:700; color:#ff3b30; }
+  .email-stat .lbl { font-size:0.8rem; color:rgba(255,255,255,0.5); margin-top:0.3rem; }
+
+  .filter-bar { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem; align-items:flex-end; }
+  .filter-bar .filter-field { display:flex; flex-direction:column; gap:0.3rem; }
+  .filter-bar label { font-size:0.75rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.05em; }
+  .filter-bar select, .filter-bar input[type="date"] {
+    padding:0.5rem 0.7rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    border-radius:8px; color:#fff; font-size:0.85rem;
+  }
+  .filter-bar select:focus, .filter-bar input:focus { outline:none; border-color:#2ee59d; }
+  .filter-bar .btn-filter { padding:0.5rem 1rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.06); color:#fff; cursor:pointer; font-size:0.85rem; align-self:flex-end; }
+  .filter-bar .btn-filter:hover { background:rgba(255,255,255,0.1); }
+
+  .email-table { width:100%; border-collapse:collapse; }
+  .email-table th { text-align:left; padding:0.8rem 0.6rem; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06); }
+  .email-table td { padding:0.8rem 0.6rem; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.85rem; vertical-align:top; }
+  .email-table tr:hover { background:rgba(255,255,255,0.02); }
+
+  .badge-type { display:inline-block; padding:0.2rem 0.5rem; border-radius:6px; font-size:0.7rem; font-weight:600; }
+  .badge-customer_confirmation { background:rgba(46,229,157,0.12); color:#2ee59d; }
+  .badge-lead_alert { background:rgba(24,119,242,0.15); color:#1877F2; }
+  .badge-purchase_confirmation { background:rgba(255,149,0,0.15); color:#FF9500; }
+  .badge-manual { background:rgba(175,82,222,0.15); color:#AF52DE; }
+
+  .badge-sent { background:rgba(46,229,157,0.25); color:#2ee59d; }
+  .badge-failed { background:rgba(255,59,48,0.15); color:#ff3b30; }
+  .badge-skipped { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.5); }
+
+  .compose-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:1.5rem; margin-top:2rem; }
+  .compose-card h3 { margin:0 0 1rem; font-size:1rem; }
+  .compose-row { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+  .compose-field { flex:1; min-width:200px; }
+  .compose-field label { display:block; font-size:0.8rem; color:rgba(255,255,255,0.5); margin-bottom:0.3rem; }
+  .compose-field input, .compose-field select, .compose-field textarea {
+    width:100%; padding:0.5rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    border-radius:8px; color:#fff; font-size:0.85rem; box-sizing:border-box;
+  }
+  .compose-field textarea { min-height:120px; font-family:monospace; resize:vertical; }
+  .compose-field input:focus, .compose-field select:focus, .compose-field textarea:focus { outline:none; border-color:#2ee59d; }
+  .btn-send { padding:0.6rem 1.5rem; border-radius:8px; border:none; cursor:pointer; font-size:0.85rem; font-weight:600; background:#2ee59d; color:#0b0b0c; }
+  .btn-send:hover { background:#26cc89; }
+
+  .related-link { color:#2ee59d; text-decoration:none; font-size:0.8rem; }
+  .related-link:hover { text-decoration:underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Email Activity</h1>
+    <p>All emails sent by the platform, plus compose &amp; send.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="email-stats">
+    <div class="email-stat">
+      <div class="val">{{ stats.total_sent }}</div>
+      <div class="lbl">Total Sent</div>
+    </div>
+    <div class="email-stat">
+      <div class="val">{{ stats.sent_today }}</div>
+      <div class="lbl">Sent Today</div>
+    </div>
+    <div class="email-stat">
+      <div class="val-red">{{ stats.failed }}</div>
+      <div class="lbl">Failed</div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <form method="get" action="/admin/email" class="filter-bar">
+    <div class="filter-field">
+      <label>Type</label>
+      <select name="type">
+        <option value="">All types</option>
+        <option value="customer_confirmation" {% if filter_type == 'customer_confirmation' %}selected{% endif %}>Customer Confirmation</option>
+        <option value="lead_alert" {% if filter_type == 'lead_alert' %}selected{% endif %}>Lead Alert</option>
+        <option value="purchase_confirmation" {% if filter_type == 'purchase_confirmation' %}selected{% endif %}>Purchase Confirmation</option>
+        <option value="manual" {% if filter_type == 'manual' %}selected{% endif %}>Manual</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>Status</label>
+      <select name="status">
+        <option value="">All statuses</option>
+        <option value="sent" {% if filter_status == 'sent' %}selected{% endif %}>Sent</option>
+        <option value="failed" {% if filter_status == 'failed' %}selected{% endif %}>Failed</option>
+        <option value="skipped" {% if filter_status == 'skipped' %}selected{% endif %}>Skipped</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>From</label>
+      <input type="date" name="date_from" value="{{ filter_date_from or '' }}">
+    </div>
+    <div class="filter-field">
+      <label>To</label>
+      <input type="date" name="date_to" value="{{ filter_date_to or '' }}">
+    </div>
+    <button type="submit" class="btn-filter">Filter</button>
+  </form>
+
+  <!-- Email log table -->
+  <div class="card" style="margin-bottom:2rem;">
+    <div class="card-header">
+      <h3>Email Log</h3>
+    </div>
+    <div class="card-body" style="overflow-x:auto;">
+      {% if logs %}
+      <table class="email-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Recipient</th>
+            <th>Subject</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Related</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td style="white-space:nowrap; font-size:0.8rem;">{{ log.sent_at.strftime('%d %b %Y %H:%M') if log.sent_at else '-' }}</td>
+            <td style="font-size:0.8rem;">{{ log.to_email }}</td>
+            <td style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ log.subject }}">{{ log.subject }}</td>
+            <td><span class="badge-type badge-{{ log.email_type }}">{{ log.email_type | replace('_', ' ') }}</span></td>
+            <td>
+              <span class="badge-type badge-{{ log.status }}">{{ log.status }}</span>
+              {% if log.error_message %}
+                <span title="{{ log.error_message }}" style="cursor:help; color:#ff3b30; font-size:0.7rem;"> !</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if log.lead %}
+                <a href="/admin/leads" class="related-link">Lead {{ log.lead.token[:8] if log.lead.token else '' }}</a>
+              {% endif %}
+              {% if log.company %}
+                <a href="/admin/companies" class="related-link">{{ log.company.company_name }}</a>
+              {% endif %}
+              {% if not log.lead and not log.company %}-{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="text-muted text-sm" style="padding:1rem;">No emails logged yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Compose Email -->
+  <div class="compose-card">
+    <h3>Compose Email</h3>
+    <form method="post" action="/admin/email/send">
+      <div class="compose-row">
+        <div class="compose-field">
+          <label>Recipient</label>
+          <select name="recipient_select" id="recipientSelect" onchange="document.getElementById('to_email').value = this.value;">
+            <option value="">-- Select a recipient --</option>
+            <optgroup label="Companies">
+              {% for c in companies %}
+                <option value="{{ c.email }}">{{ c.company_name }} ({{ c.email }})</option>
+              {% endfor %}
+            </optgroup>
+            {% if customers %}
+            <optgroup label="Recent Customers">
+              {% for cust in customers %}
+                <option value="{{ cust.customer_email }}">{{ cust.customer_name or 'Customer' }} ({{ cust.customer_email }})</option>
+              {% endfor %}
+            </optgroup>
+            {% endif %}
+          </select>
+        </div>
+      </div>
+      <div class="compose-row">
+        <div class="compose-field">
+          <label>To (email address)</label>
+          <input type="email" name="to_email" id="to_email" required placeholder="recipient@example.com">
+        </div>
+        <div class="compose-field">
+          <label>Subject</label>
+          <input type="text" name="subject" required placeholder="Email subject line">
+        </div>
+      </div>
+      <div class="compose-row">
+        <div class="compose-field" style="flex:1 1 100%;">
+          <label>Body (HTML allowed)</label>
+          <textarea name="body_html" required placeholder="Type your email content here..."></textarea>
+        </div>
+      </div>
+      <button type="submit" class="btn-send">Send Email</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

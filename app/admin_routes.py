@@ -23,12 +23,14 @@ from app.dependencies import get_current_admin
 from app.models import (
     AdminUser,
     Company,
+    EmailLog,
     Lead,
     LeadPricingTier,
     LeadPurchase,
     SocialConfig,
     SocialPost,
 )
+from app.notifications import send_manual_email
 from app.social_autopilot import (
     force_generate_batch,
     manually_publish_post,
@@ -487,3 +489,107 @@ async def admin_social_settings(
 
     db.commit()
     return RedirectResponse(url="/admin/social", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# 17. GET /admin/email -- Email activity log + compose form
+# ---------------------------------------------------------------------------
+@router.get("/admin/email")
+async def admin_email(
+    request: Request,
+    type: str = None,
+    status: str = None,
+    date_from: str = None,
+    date_to: str = None,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Stats
+    total_sent = db.query(func.count(EmailLog.id)).scalar() or 0
+    sent_today = (
+        db.query(func.count(EmailLog.id))
+        .filter(EmailLog.sent_at >= today_start)
+        .scalar() or 0
+    )
+    failed = (
+        db.query(func.count(EmailLog.id))
+        .filter(EmailLog.status == "failed")
+        .scalar() or 0
+    )
+
+    # Filtered query
+    query = db.query(EmailLog)
+    if type:
+        query = query.filter(EmailLog.email_type == type)
+    if status:
+        query = query.filter(EmailLog.status == status)
+    if date_from:
+        try:
+            df = datetime.strptime(date_from, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            query = query.filter(EmailLog.sent_at >= df)
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            dt = datetime.strptime(date_to, "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59, tzinfo=timezone.utc
+            )
+            query = query.filter(EmailLog.sent_at <= dt)
+        except ValueError:
+            pass
+
+    logs = query.order_by(EmailLog.sent_at.desc()).limit(200).all()
+
+    # Data for compose dropdown
+    companies = db.query(Company).filter(Company.is_active == True).order_by(Company.company_name).all()
+    customers = (
+        db.query(Lead)
+        .filter(Lead.customer_email.isnot(None), Lead.customer_email != "")
+        .order_by(Lead.submitted_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "admin/email.html",
+        {
+            "request": request,
+            "admin": admin,
+            "active_page": "email",
+            "stats": {
+                "total_sent": total_sent,
+                "sent_today": sent_today,
+                "failed": failed,
+            },
+            "logs": logs,
+            "companies": companies,
+            "customers": customers,
+            "filter_type": type,
+            "filter_status": status,
+            "filter_date_from": date_from,
+            "filter_date_to": date_to,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# 18. POST /admin/email/send -- Send a manual email from compose form
+# ---------------------------------------------------------------------------
+@router.post("/admin/email/send")
+async def admin_email_send(
+    to_email: str = Form(...),
+    subject: str = Form(...),
+    body_html: str = Form(...),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    send_manual_email(
+        to_email=to_email.strip(),
+        subject=subject.strip(),
+        body_html=body_html,
+        sent_by_admin_id=admin.id,
+    )
+    return RedirectResponse(url="/admin/email", status_code=303)

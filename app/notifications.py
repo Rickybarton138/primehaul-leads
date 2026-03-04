@@ -3,10 +3,12 @@ PrimeHaul Leads -- Email notification system.
 
 Sends transactional emails to customers and removal companies
 via SMTP. Silently degrades when SMTP is not configured (dev mode).
+All emails are logged to the email_logs table for admin visibility.
 """
 
 import logging
 import smtplib
+from datetime import datetime, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -120,14 +122,76 @@ def _dropoff_area(lead) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Email logging helper (writes to email_logs table)
+# ---------------------------------------------------------------------------
+def _log_email(
+    *,
+    to_email: str,
+    subject: str,
+    email_type: str,
+    status: str,
+    error_message: str | None = None,
+    lead_id=None,
+    company_id=None,
+    sent_by_admin_id=None,
+):
+    """Log an email to the database using an isolated session.
+
+    Uses its own SessionLocal() so logging failures never interfere
+    with the caller's transaction.
+    """
+    try:
+        from app.database import SessionLocal
+        from app.models import EmailLog
+
+        db = SessionLocal()
+        try:
+            log = EmailLog(
+                to_email=to_email,
+                subject=subject,
+                email_type=email_type,
+                status=status,
+                error_message=error_message,
+                lead_id=lead_id,
+                company_id=company_id,
+                sent_by_admin_id=sent_by_admin_id,
+            )
+            db.add(log)
+            db.commit()
+        finally:
+            db.close()
+    except Exception:
+        logger.exception("[EMAIL-LOG] Failed to write email log entry")
+
+
+# ---------------------------------------------------------------------------
 # Core email sender
 # ---------------------------------------------------------------------------
-def _send_email(to_email: str, subject: str, html_body: str):
+def _send_email(
+    to_email: str,
+    subject: str,
+    html_body: str,
+    *,
+    email_type: str = "manual",
+    lead_id=None,
+    company_id=None,
+    sent_by_admin_id=None,
+):
     """Send an email via SMTP.  Silently fails if SMTP is not configured."""
+    log_kwargs = dict(
+        to_email=to_email,
+        subject=subject,
+        email_type=email_type,
+        lead_id=lead_id,
+        company_id=company_id,
+        sent_by_admin_id=sent_by_admin_id,
+    )
+
     if not settings.SMTP_HOST or not settings.SMTP_USERNAME:
         logger.info(
             "[EMAIL] SMTP not configured. Would send to %s: %s", to_email, subject
         )
+        _log_email(**log_kwargs, status="skipped")
         return
 
     msg = MIMEMultipart("alternative")
@@ -142,8 +206,10 @@ def _send_email(to_email: str, subject: str, html_body: str):
             server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
             server.send_message(msg)
         logger.info("[EMAIL] Sent to %s: %s", to_email, subject)
-    except Exception:
+        _log_email(**log_kwargs, status="sent")
+    except Exception as exc:
         logger.exception("[EMAIL] Failed to send to %s: %s", to_email, subject)
+        _log_email(**log_kwargs, status="failed", error_message=str(exc))
 
 
 # ---------------------------------------------------------------------------
@@ -197,6 +263,8 @@ def send_customer_confirmation(lead):
         to_email=lead.customer_email,
         subject="Your PrimeHaul moving quote request has been received",
         html_body=_wrap_html(inner),
+        email_type="customer_confirmation",
+        lead_id=lead.id,
     )
 
 
@@ -258,6 +326,9 @@ def send_lead_alert_email(company, lead):
         to_email=notification_email,
         subject=f"New lead: {_pickup_area(lead)} to {_dropoff_area(lead)} ({lead.total_cbm or 0} CBM)",
         html_body=_wrap_html(inner),
+        email_type="lead_alert",
+        lead_id=lead.id,
+        company_id=company.id,
     )
 
 
@@ -326,4 +397,24 @@ def send_purchase_confirmation(company, lead):
         to_email=notification_email,
         subject=f"Lead purchased: {lead.customer_name or 'Customer'} - {_pickup_area(lead)} to {_dropoff_area(lead)}",
         html_body=_wrap_html(inner),
+        email_type="purchase_confirmation",
+        lead_id=lead.id,
+        company_id=company.id,
+    )
+
+
+def send_manual_email(
+    to_email: str,
+    subject: str,
+    body_html: str,
+    *,
+    sent_by_admin_id=None,
+):
+    """Send a manual email composed from the admin dashboard."""
+    _send_email(
+        to_email=to_email,
+        subject=subject,
+        html_body=_wrap_html(body_html),
+        email_type="manual",
+        sent_by_admin_id=sent_by_admin_id,
     )

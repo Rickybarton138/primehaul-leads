@@ -22,6 +22,14 @@ class Settings:
     SMTP_FROM_EMAIL: str = os.getenv("SMTP_FROM_EMAIL", "leads@primehaul.co.uk")
     SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME", "PrimeHaul Leads")
 
+    # Cloud Storage (S3-compatible: AWS S3, Cloudflare R2, DO Spaces)
+    S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", "")
+    S3_ACCESS_KEY_ID: str = os.getenv("S3_ACCESS_KEY_ID", "")
+    S3_SECRET_ACCESS_KEY: str = os.getenv("S3_SECRET_ACCESS_KEY", "")
+    S3_ENDPOINT_URL: str = os.getenv("S3_ENDPOINT_URL", "")
+    S3_REGION: str = os.getenv("S3_REGION", "auto")
+    S3_PUBLIC_URL: str = os.getenv("S3_PUBLIC_URL", "")
+
     # Social Media Automation
     META_PAGE_ACCESS_TOKEN: str = os.getenv("META_PAGE_ACCESS_TOKEN", "")
     META_PAGE_ID: str = os.getenv("META_PAGE_ID", "")

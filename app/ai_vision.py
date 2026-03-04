@@ -25,8 +25,18 @@ except Exception as e:
 
 
 def _img_to_data_url(path: str) -> str:
-    """Compress and resize image before base64 encoding to avoid payload limits."""
-    img = Image.open(path)
+    """Compress and resize image before base64 encoding to avoid payload limits.
+
+    Accepts a local file path or an s3:// URI.
+    """
+    if path.startswith("s3://"):
+        from app.storage import get_photo_bytes
+        raw = get_photo_bytes(path)
+        if raw is None:
+            raise ValueError(f"Could not read image from cloud storage: {path}")
+        img = Image.open(io.BytesIO(raw))
+    else:
+        img = Image.open(path)
 
     # Convert to RGB if needed
     if img.mode in ("RGBA", "P", "LA"):
@@ -57,7 +67,8 @@ def extract_removal_inventory(image_paths: List[str]) -> Dict[str, Any]:
 
     valid_paths = []
     for p in image_paths[:6]:
-        if not os.path.exists(p):
+        # S3 paths are validated during read, skip filesystem check for them
+        if not p.startswith("s3://") and not os.path.exists(p):
             raise ValueError(f"Image file not found: {p}")
         valid_paths.append(p)
 

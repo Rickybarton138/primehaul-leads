@@ -41,6 +41,7 @@ from app.rate_limit import limiter
 from app.geo import calculate_distance_miles
 from app.models import Lead, LeadItem, LeadPhoto, LeadRoom
 from app.pricing import calculate_lead_estimate, calculate_lead_price_pence
+from app.storage import upload_photo, get_photo_bytes
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -618,10 +619,6 @@ async def survey_room_upload(
             url=f"/survey/{token}/room/{room_id}", status_code=303
         )
 
-    # Ensure upload directory exists
-    upload_dir = UPLOAD_ROOT / "leads" / token
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
     saved_paths: List[str] = []
     photos_saved = 0
 
@@ -647,7 +644,7 @@ async def survey_room_upload(
             continue
 
         try:
-            meta = _process_and_save_image(upload_dir, file_bytes, original_name)
+            meta = upload_photo(token, file_bytes, original_name)
         except Exception:
             logger.exception("Failed to process image %s", original_name)
             continue
@@ -999,25 +996,33 @@ async def social_proof(request: Request, db: Session = Depends(get_db)):
 # -------------------------------------------------------------------
 @app.get("/photo/leads/{token}/{filename}")
 async def serve_lead_photo(token: str, filename: str):
-    """Serve a photo file from the uploads directory.
+    """Serve a photo — from S3 (via redirect/proxy) or local filesystem."""
+    from fastapi.responses import Response
 
-    Basic path-traversal protection: strip anything that is not an
-    expected filename character.
-    """
     # Sanitise inputs to prevent directory traversal
     safe_token = "".join(c for c in token if c.isalnum())
-    safe_filename = pathlib.Path(filename).name  # strips any directory components
+    safe_filename = pathlib.Path(filename).name
 
+    # Try local filesystem first (works for local dev + legacy uploads)
     file_path = UPLOAD_ROOT / "leads" / safe_token / safe_filename
+    if file_path.is_file():
+        return FileResponse(
+            path=str(file_path),
+            media_type="image/jpeg",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
 
-    if not file_path.is_file():
-        raise HTTPException(status_code=404, detail="Photo not found")
+    # Try S3
+    storage_path = f"s3://{os.getenv('S3_BUCKET_NAME', '')}/leads/{safe_token}/{safe_filename}"
+    photo_bytes = get_photo_bytes(storage_path)
+    if photo_bytes:
+        return Response(
+            content=photo_bytes,
+            media_type="image/jpeg",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
 
-    return FileResponse(
-        path=str(file_path),
-        media_type="image/jpeg",
-        headers={"Cache-Control": "public, max-age=86400"},
-    )
+    raise HTTPException(status_code=404, detail="Photo not found")
 
 
 # -------------------------------------------------------------------
