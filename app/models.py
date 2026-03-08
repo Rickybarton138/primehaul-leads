@@ -72,6 +72,8 @@ class Lead(Base):
     ref_code = Column(String(8), unique=True, index=True)
     referred_by = Column(String(8), index=True)
     share_token = Column(String(16), unique=True, index=True)
+    referral_count = Column(Integer, default=0)  # how many people this lead referred
+    referral_discount_pct = Column(Integer, default=0)  # earned discount (5% per referral, max 20%)
 
     # Relationships
     rooms = relationship("LeadRoom", back_populates="lead", cascade="all, delete-orphan")

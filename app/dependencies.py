@@ -1,3 +1,5 @@
+import uuid as _uuid
+
 from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from jose import JWTError
@@ -7,7 +9,15 @@ from app.auth import decode_access_token
 from app.models import Company, AdminUser
 
 
-def get_current_company(
+def _parse_id(raw: str):
+    """Convert a string ID to a UUID object for SQLAlchemy UUID columns."""
+    try:
+        return _uuid.UUID(raw)
+    except (ValueError, AttributeError):
+        return raw
+
+
+async def get_current_company(
     access_token: str = Cookie(None),
     db: Session = Depends(get_db),
 ) -> Company:
@@ -21,13 +31,13 @@ def get_current_company(
     except JWTError:
         raise HTTPException(status_code=status.HTTP_302_FOUND, headers={"Location": "/company/login"})
 
-    company = db.query(Company).filter(Company.id == company_id).first()
+    company = db.query(Company).filter(Company.id == _parse_id(company_id)).first()
     if not company or not company.is_active:
         raise HTTPException(status_code=status.HTTP_302_FOUND, headers={"Location": "/company/login"})
     return company
 
 
-def get_current_admin(
+async def get_current_admin(
     admin_token: str = Cookie(None),
     db: Session = Depends(get_db),
 ) -> AdminUser:
@@ -41,7 +51,7 @@ def get_current_admin(
     except JWTError:
         raise HTTPException(status_code=status.HTTP_302_FOUND, headers={"Location": "/admin/login"})
 
-    admin = db.query(AdminUser).filter(AdminUser.id == admin_id).first()
+    admin = db.query(AdminUser).filter(AdminUser.id == _parse_id(admin_id)).first()
     if not admin or not admin.is_active:
         raise HTTPException(status_code=status.HTTP_302_FOUND, headers={"Location": "/admin/login"})
     return admin

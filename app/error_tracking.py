@@ -4,6 +4,8 @@ and provides a structured logging handler.
 """
 
 import logging
+import os
+import sys
 import traceback
 from datetime import datetime, timezone
 
@@ -17,6 +19,10 @@ from app.models import ErrorLog
 logger = logging.getLogger("primehaul")
 
 
+def _is_test_mode():
+    return "pytest" in sys.modules
+
+
 def log_error(
     level: str,
     source: str,
@@ -26,6 +32,8 @@ def log_error(
     extra: dict = None,
 ):
     """Write an error record to the database."""
+    if _is_test_mode():
+        return  # Skip DB writes in test mode
     try:
         db = SessionLocal()
         entry = ErrorLog(

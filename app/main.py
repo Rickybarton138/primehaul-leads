@@ -10,6 +10,7 @@ import asyncio
 import logging
 import os
 import pathlib
+import sys
 import random
 import string
 import uuid
@@ -162,6 +163,10 @@ _scheduler = BackgroundScheduler()
 
 @app.on_event("startup")
 def start_social_scheduler():
+    if os.getenv("APP_ENV") == "development" and "pytest" in sys.modules:
+        logger.info("Skipping social scheduler in test mode")
+        return
+
     from app.social_autopilot import (
         generate_weekly_content,
         publish_due_posts,
@@ -831,6 +836,20 @@ async def survey_review_post(
 async def survey_estimate(token: str, request: Request, db: Session = Depends(get_db)):
     lead = get_lead_or_404(token, db)
     estimate = calculate_lead_estimate(lead)
+
+    # Apply referral discount if earned
+    discount_pct = lead.referral_discount_pct or 0
+    referral_savings = None
+    if discount_pct > 0 and lead.estimate_low and lead.estimate_high:
+        referral_savings = {
+            "discount_pct": discount_pct,
+            "referral_count": lead.referral_count or 0,
+            "original_low": lead.estimate_low,
+            "original_high": lead.estimate_high,
+            "discounted_low": int(lead.estimate_low * (100 - discount_pct) / 100),
+            "discounted_high": int(lead.estimate_high * (100 - discount_pct) / 100),
+        }
+
     return templates.TemplateResponse(
         "consumer/estimate.html",
         {
@@ -841,6 +860,7 @@ async def survey_estimate(token: str, request: Request, db: Session = Depends(ge
             "progress": PROGRESS["estimate"],
             "share_token": lead.share_token,
             "ref_code": lead.ref_code,
+            "referral_savings": referral_savings,
         },
     )
 
@@ -888,9 +908,25 @@ async def survey_contact_post(
 
     db.commit()
 
+    # --- Referral reward: track successful referrals ---
+    if lead.referred_by:
+        try:
+            referrer = db.query(Lead).filter(Lead.ref_code == lead.referred_by).first()
+            if referrer:
+                # Increment referrer's successful referral count
+                referrer.referral_count = (referrer.referral_count or 0) + 1
+                # Apply 5% discount per referral (max 20%) to referrer's estimate
+                discount_pct = min(referrer.referral_count * 5, 20)
+                referrer.referral_discount_pct = discount_pct
+                db.commit()
+                logger.info(
+                    "Referral reward: lead %s referred by %s (now %d referrals, %d%% discount)",
+                    lead.token, referrer.token, referrer.referral_count, discount_pct,
+                )
+        except Exception:
+            logger.exception("Failed to process referral reward for lead %s", lead.token)
+
     # Trigger asynchronous lead distribution to matching removal companies.
-    # Import inside the handler to avoid circular imports and allow the
-    # module to be created independently.
     try:
         from app import lead_matching
 

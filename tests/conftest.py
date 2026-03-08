@@ -8,7 +8,7 @@ os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-for-testing-only")
 os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://test:test@localhost/test")  # placeholder; overridden below
 
 import pytest
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
@@ -21,9 +21,6 @@ from app.main import app
 # Register PostgreSQL-specific types so SQLite can handle them
 # ---------------------------------------------------------------------------
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
-from sqlalchemy import JSON, String
-
-# Tell SQLAlchemy how to compile JSONB and UUID on SQLite
 from sqlalchemy.ext.compiler import compiles
 
 @compiles(JSONB, "sqlite")
@@ -36,7 +33,7 @@ def _compile_uuid_sqlite(type_, compiler, **kw):
 
 
 # ---------------------------------------------------------------------------
-# In-memory SQLite database for fast, isolated tests
+# In-memory SQLite database with StaticPool
 # ---------------------------------------------------------------------------
 SQLALCHEMY_TEST_URL = "sqlite://"
 
@@ -48,7 +45,9 @@ engine = create_engine(
 TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def override_get_db():
+# Use async override so FastAPI doesn't run it in a threadpool
+# (avoids SQLite StaticPool thread-safety deadlocks)
+async def override_get_db():
     db = TestSessionLocal()
     try:
         yield db
@@ -57,6 +56,10 @@ def override_get_db():
 
 
 app.dependency_overrides[get_db] = override_get_db
+
+# Remove ErrorTrackingMiddleware — uses production SessionLocal
+app.user_middleware = [m for m in app.user_middleware if "ErrorTracking" not in str(m.cls)]
+app.middleware_stack = app.build_middleware_stack()
 
 
 @pytest.fixture(autouse=True)

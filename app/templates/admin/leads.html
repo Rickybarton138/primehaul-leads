@@ -16,10 +16,10 @@
         <label class="form-label" for="status">Status</label>
         <select id="status" name="status" class="form-input form-select">
           <option value="">All</option>
-          <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
-          <option value="submitted" {% if request.args.get('status') == 'submitted' %}selected{% endif %}>Submitted</option>
-          <option value="in_progress" {% if request.args.get('status') == 'in_progress' %}selected{% endif %}>In Progress</option>
-          <option value="expired" {% if request.args.get('status') == 'expired' %}selected{% endif %}>Expired</option>
+          <option value="active" {% if request.query_params.get('status') == 'active' %}selected{% endif %}>Active</option>
+          <option value="submitted" {% if request.query_params.get('status') == 'submitted' %}selected{% endif %}>Submitted</option>
+          <option value="in_progress" {% if request.query_params.get('status') == 'in_progress' %}selected{% endif %}>In Progress</option>
+          <option value="expired" {% if request.query_params.get('status') == 'expired' %}selected{% endif %}>Expired</option>
         </select>
       </div>
       <div style="margin-bottom:0;">

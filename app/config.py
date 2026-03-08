@@ -40,6 +40,9 @@ class Settings:
     X_ACCESS_TOKEN_SECRET: str = os.getenv("X_ACCESS_TOKEN_SECRET", "")
     LINKEDIN_ACCESS_TOKEN: str = os.getenv("LINKEDIN_ACCESS_TOKEN", "")
     LINKEDIN_ORG_ID: str = os.getenv("LINKEDIN_ORG_ID", "")
+    LINKEDIN_CLIENT_ID: str = os.getenv("LINKEDIN_CLIENT_ID", "")
+    LINKEDIN_CLIENT_SECRET: str = os.getenv("LINKEDIN_CLIENT_SECRET", "")
+    LINKEDIN_REFRESH_TOKEN: str = os.getenv("LINKEDIN_REFRESH_TOKEN", "")
     SOCIAL_AUTO_PUBLISH: bool = os.getenv("SOCIAL_AUTO_PUBLISH", "true").lower() == "true"
     SOCIAL_POSTS_PER_DAY: int = int(os.getenv("SOCIAL_POSTS_PER_DAY", "2"))
 

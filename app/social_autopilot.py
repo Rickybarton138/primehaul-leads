@@ -423,6 +423,64 @@ def post_to_x(caption: str, image_path: Optional[str] = None) -> Optional[str]:
         return None
 
 
+def _refresh_linkedin_token() -> Optional[str]:
+    """Attempt to refresh the LinkedIn access token using the refresh token.
+
+    Returns the new access token, or None if refresh fails.
+    LinkedIn access tokens expire every ~60 days; refresh tokens last ~1 year.
+    """
+    import os
+    refresh_token = os.getenv("LINKEDIN_REFRESH_TOKEN", "")
+    client_id = os.getenv("LINKEDIN_CLIENT_ID", "")
+    client_secret = os.getenv("LINKEDIN_CLIENT_SECRET", "")
+
+    if not all([refresh_token, client_id, client_secret]):
+        logger.warning("LinkedIn refresh credentials not configured — cannot refresh token")
+        return None
+
+    try:
+        resp = httpx.post(
+            "https://www.linkedin.com/oauth/v2/accessToken",
+            data={
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+                "client_id": client_id,
+                "client_secret": client_secret,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        new_token = data.get("access_token")
+        new_refresh = data.get("refresh_token")
+
+        if new_token:
+            # Update the in-memory settings so subsequent calls use the new token
+            settings.LINKEDIN_ACCESS_TOKEN = new_token
+            logger.info("LinkedIn access token refreshed successfully")
+
+            # Persist to SocialAccount table if it exists
+            try:
+                db = SessionLocal()
+                acct = db.query(SocialAccount).filter(SocialAccount.platform == "linkedin").first()
+                if acct:
+                    acct.access_token = new_token
+                    if new_refresh:
+                        acct.refresh_token = new_refresh
+                    from datetime import timedelta
+                    acct.token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=data.get("expires_in", 5184000))
+                    db.commit()
+                db.close()
+            except Exception:
+                logger.exception("Failed to persist refreshed LinkedIn token to DB")
+
+            return new_token
+    except Exception as e:
+        logger.error(f"LinkedIn token refresh failed: {e}")
+
+    return None
+
+
 def post_to_linkedin(caption: str, image_path: Optional[str] = None) -> Optional[str]:
     """Publish to LinkedIn Organization via API. Returns post URN or None."""
     token = settings.LINKEDIN_ACCESS_TOKEN
@@ -496,6 +554,17 @@ def post_to_linkedin(caption: str, image_path: Optional[str] = None) -> Optional
         logger.info(f"Posted to LinkedIn: {post_urn}")
         return post_urn
 
+    except httpx.HTTPStatusError as e:
+        # If 401 Unauthorized, try refreshing the token and retry once
+        if e.response.status_code == 401:
+            logger.info("LinkedIn token expired — attempting refresh")
+            new_token = _refresh_linkedin_token()
+            if new_token:
+                return post_to_linkedin(caption, image_path)  # Retry with new token
+            logger.error("LinkedIn token refresh failed — cannot post")
+        else:
+            logger.error(f"LinkedIn posting failed: {e}")
+        return None
     except Exception as e:
         logger.error(f"LinkedIn posting failed: {e}")
         return None
