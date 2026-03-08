@@ -7,12 +7,12 @@ and protected by JWT-based admin authentication (cookie: admin_token).
 """
 
 import pathlib
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, verify_password
@@ -24,9 +24,13 @@ from app.models import (
     AdminUser,
     Company,
     EmailLog,
+    ErrorLog,
     Lead,
+    LeadNotification,
+    LeadPhoto,
     LeadPricingTier,
     LeadPurchase,
+    LeadRoom,
     SocialConfig,
     SocialPost,
 )
@@ -593,3 +597,244 @@ async def admin_email_send(
         sent_by_admin_id=admin.id,
     )
     return RedirectResponse(url="/admin/email", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# 19. GET /admin/analytics -- Funnel analytics dashboard
+# ---------------------------------------------------------------------------
+@router.get("/admin/analytics")
+async def admin_analytics(
+    request: Request,
+    days: int = 30,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=days)
+
+    # --- Funnel stages ---
+    started = (
+        db.query(func.count(Lead.id))
+        .filter(Lead.created_at >= since)
+        .scalar() or 0
+    )
+
+    with_photos = (
+        db.query(func.count(func.distinct(Lead.id)))
+        .join(LeadRoom, LeadRoom.lead_id == Lead.id)
+        .join(LeadPhoto, LeadPhoto.room_id == LeadRoom.id)
+        .filter(Lead.created_at >= since)
+        .scalar() or 0
+    )
+
+    submitted = (
+        db.query(func.count(Lead.id))
+        .filter(Lead.submitted_at >= since, Lead.status.in_(["submitted", "active", "expired"]))
+        .scalar() or 0
+    )
+
+    purchased = (
+        db.query(func.count(LeadPurchase.id))
+        .filter(LeadPurchase.payment_status == "paid", LeadPurchase.paid_at >= since)
+        .scalar() or 0
+    )
+
+    # --- Revenue ---
+    revenue_pence = (
+        db.query(func.sum(LeadPurchase.price_pence))
+        .filter(LeadPurchase.payment_status == "paid", LeadPurchase.paid_at >= since)
+        .scalar() or 0
+    )
+
+    # --- Avg lead value ---
+    avg_estimate = (
+        db.query(func.avg((Lead.estimate_low + Lead.estimate_high) / 2))
+        .filter(Lead.submitted_at >= since, Lead.estimate_low.isnot(None))
+        .scalar()
+    )
+
+    # --- Avg CBM ---
+    avg_cbm = (
+        db.query(func.avg(Lead.total_cbm))
+        .filter(Lead.submitted_at >= since, Lead.total_cbm > 0)
+        .scalar()
+    )
+
+    # --- Notifications sent vs purchased ---
+    notified = (
+        db.query(func.count(LeadNotification.id))
+        .filter(LeadNotification.sent_at >= since)
+        .scalar() or 0
+    )
+
+    # --- Top companies by purchases ---
+    top_companies = (
+        db.query(
+            Company.company_name,
+            func.count(LeadPurchase.id).label("purchases"),
+            func.sum(LeadPurchase.price_pence).label("spent_pence"),
+        )
+        .join(LeadPurchase, LeadPurchase.company_id == Company.id)
+        .filter(LeadPurchase.payment_status == "paid", LeadPurchase.paid_at >= since)
+        .group_by(Company.id, Company.company_name)
+        .order_by(func.count(LeadPurchase.id).desc())
+        .limit(10)
+        .all()
+    )
+
+    # --- Leads by status ---
+    status_counts = (
+        db.query(Lead.status, func.count(Lead.id))
+        .filter(Lead.created_at >= since)
+        .group_by(Lead.status)
+        .all()
+    )
+    status_map = dict(status_counts)
+
+    # --- Daily lead volume (last N days) ---
+    from sqlalchemy import cast, Date
+    daily_leads = (
+        db.query(
+            cast(Lead.created_at, Date).label("day"),
+            func.count(Lead.id).label("count"),
+        )
+        .filter(Lead.created_at >= since)
+        .group_by("day")
+        .order_by("day")
+        .all()
+    )
+
+    # --- Property type distribution ---
+    property_types = (
+        db.query(Lead.property_type, func.count(Lead.id))
+        .filter(Lead.submitted_at >= since, Lead.property_type.isnot(None))
+        .group_by(Lead.property_type)
+        .order_by(func.count(Lead.id).desc())
+        .all()
+    )
+
+    # --- Email stats ---
+    emails_sent = (
+        db.query(func.count(EmailLog.id))
+        .filter(EmailLog.sent_at >= since, EmailLog.status == "sent")
+        .scalar() or 0
+    )
+    emails_failed = (
+        db.query(func.count(EmailLog.id))
+        .filter(EmailLog.sent_at >= since, EmailLog.status == "failed")
+        .scalar() or 0
+    )
+
+    # Conversion rates
+    photo_rate = round(with_photos / started * 100, 1) if started else 0
+    submit_rate = round(submitted / started * 100, 1) if started else 0
+    purchase_rate = round(purchased / submitted * 100, 1) if submitted else 0
+    notification_conversion = round(purchased / notified * 100, 1) if notified else 0
+
+    return templates.TemplateResponse(
+        "admin/analytics.html",
+        {
+            "request": request,
+            "admin": admin,
+            "active_page": "analytics",
+            "days": days,
+            "funnel": {
+                "started": started,
+                "with_photos": with_photos,
+                "submitted": submitted,
+                "purchased": purchased,
+                "photo_rate": photo_rate,
+                "submit_rate": submit_rate,
+                "purchase_rate": purchase_rate,
+            },
+            "revenue": {
+                "total_gbp": revenue_pence / 100,
+                "avg_estimate": round(float(avg_estimate), 0) if avg_estimate else 0,
+                "avg_cbm": round(float(avg_cbm), 1) if avg_cbm else 0,
+            },
+            "notifications": {
+                "sent": notified,
+                "conversion": notification_conversion,
+            },
+            "emails": {
+                "sent": emails_sent,
+                "failed": emails_failed,
+            },
+            "top_companies": top_companies,
+            "status_map": status_map,
+            "daily_leads": daily_leads,
+            "property_types": property_types,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# 20. GET /admin/errors -- Error monitoring dashboard
+# ---------------------------------------------------------------------------
+@router.get("/admin/errors")
+async def admin_errors(
+    request: Request,
+    level: str = None,
+    source: str = None,
+    days: int = 7,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=days)
+
+    # Stats
+    total_errors = (
+        db.query(func.count(ErrorLog.id))
+        .filter(ErrorLog.timestamp >= since)
+        .scalar() or 0
+    )
+    critical_count = (
+        db.query(func.count(ErrorLog.id))
+        .filter(ErrorLog.timestamp >= since, ErrorLog.level == "CRITICAL")
+        .scalar() or 0
+    )
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_errors = (
+        db.query(func.count(ErrorLog.id))
+        .filter(ErrorLog.timestamp >= today_start)
+        .scalar() or 0
+    )
+
+    # Errors by source
+    by_source = (
+        db.query(ErrorLog.source, func.count(ErrorLog.id))
+        .filter(ErrorLog.timestamp >= since)
+        .group_by(ErrorLog.source)
+        .order_by(func.count(ErrorLog.id).desc())
+        .limit(10)
+        .all()
+    )
+
+    # Filtered error list
+    query = db.query(ErrorLog).filter(ErrorLog.timestamp >= since)
+    if level:
+        query = query.filter(ErrorLog.level == level)
+    if source:
+        query = query.filter(ErrorLog.source == source)
+
+    errors = query.order_by(ErrorLog.timestamp.desc()).limit(100).all()
+
+    return templates.TemplateResponse(
+        "admin/errors.html",
+        {
+            "request": request,
+            "admin": admin,
+            "active_page": "errors",
+            "days": days,
+            "stats": {
+                "total": total_errors,
+                "critical": critical_count,
+                "today": today_errors,
+            },
+            "by_source": by_source,
+            "errors": errors,
+            "filter_level": level,
+            "filter_source": source,
+        },
+    )

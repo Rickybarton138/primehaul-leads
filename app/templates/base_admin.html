@@ -51,6 +51,11 @@
             </a>
           </li>
           <li>
+            <a href="/admin/analytics" class="{% if active_page == 'analytics' %}active{% endif %}">
+              <span class="nav-icon">&#9650;</span> Analytics
+            </a>
+          </li>
+          <li>
             <a href="/admin/social" class="{% if active_page == 'social' %}active{% endif %}">
               <span class="nav-icon">&#9733;</span> Social
             </a>
@@ -58,6 +63,11 @@
           <li>
             <a href="/admin/email" class="{% if active_page == 'email' %}active{% endif %}">
               <span class="nav-icon">&#9993;</span> Email
+            </a>
+          </li>
+          <li>
+            <a href="/admin/errors" class="{% if active_page == 'errors' %}active{% endif %}">
+              <span class="nav-icon">&#9888;</span> Errors
             </a>
           </li>
         </ul>
@@ -93,6 +103,9 @@
       </a>
       <a href="/admin/social" class="{% if active_page == 'social' %}active{% endif %}">
         <span class="bnav-icon">&#9733;</span> Social
+      </a>
+      <a href="/admin/analytics" class="{% if active_page == 'analytics' %}active{% endif %}">
+        <span class="bnav-icon">&#9650;</span> Stats
       </a>
       <a href="/admin/email" class="{% if active_page == 'email' %}active{% endif %}">
         <span class="bnav-icon">&#9993;</span> Email

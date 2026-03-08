@@ -1,0 +1,129 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Error Monitor{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Error Monitor</h1>
+    <div style="display:flex;gap:0.5rem;">
+      <a href="/admin/errors?days=1" class="btn btn-sm {% if days == 1 %}btn-accent{% else %}btn-ghost{% endif %}">24h</a>
+      <a href="/admin/errors?days=7" class="btn btn-sm {% if days == 7 %}btn-accent{% else %}btn-ghost{% endif %}">7 days</a>
+      <a href="/admin/errors?days=30" class="btn btn-sm {% if days == 30 %}btn-accent{% else %}btn-ghost{% endif %}">30 days</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value" style="color:{% if stats.total > 0 %}#FF3B30{% else %}#2ee59d{% endif %};">{{ stats.total }}</div>
+      <div class="stat-label">Errors ({{ days }}d)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:{% if stats.critical > 0 %}#FF3B30{% else %}#2ee59d{% endif %};">{{ stats.critical }}</div>
+      <div class="stat-label">Critical</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.today }}</div>
+      <div class="stat-label">Today</div>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-top:1.5rem;">
+    <!-- Errors by source -->
+    <div class="card">
+      <div class="card-header"><h3>By Source</h3></div>
+      <div class="card-body">
+        {% if by_source %}
+          {% for source, count in by_source %}
+            <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <a href="/admin/errors?source={{ source }}&days={{ days }}" style="color:inherit;text-decoration:none;">
+                <code style="font-size:0.8rem;background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:3px;">{{ source }}</code>
+              </a>
+              <span style="font-weight:600;color:#FF3B30;">{{ count }}</span>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted text-sm">No errors. All clear!</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card">
+      <div class="card-header"><h3>Filter</h3></div>
+      <div class="card-body">
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+          <a href="/admin/errors?days={{ days }}" class="btn btn-sm {% if not filter_level and not filter_source %}btn-accent{% else %}btn-ghost{% endif %}">All</a>
+          <a href="/admin/errors?level=CRITICAL&days={{ days }}" class="btn btn-sm {% if filter_level == 'CRITICAL' %}btn-accent{% else %}btn-ghost{% endif %}">Critical</a>
+          <a href="/admin/errors?level=ERROR&days={{ days }}" class="btn btn-sm {% if filter_level == 'ERROR' %}btn-accent{% else %}btn-ghost{% endif %}">Error</a>
+          <a href="/admin/errors?level=WARNING&days={{ days }}" class="btn btn-sm {% if filter_level == 'WARNING' %}btn-accent{% else %}btn-ghost{% endif %}">Warning</a>
+        </div>
+        {% if filter_source %}
+          <div style="margin-top:0.8rem;">
+            <span class="text-muted text-sm">Source:</span>
+            <code style="font-size:0.8rem;background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:3px;">{{ filter_source }}</code>
+            <a href="/admin/errors?days={{ days }}{% if filter_level %}&level={{ filter_level }}{% endif %}" class="text-sm" style="margin-left:0.5rem;color:#FF3B30;">clear</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Error list -->
+  <div class="card" style="margin-top:1.5rem;">
+    <div class="card-header"><h3>Error Log</h3></div>
+    <div class="card-body">
+      {% if errors %}
+        {% for err in errors %}
+          <details style="border-bottom:1px solid rgba(255,255,255,0.04);padding:0.8rem 0;">
+            <summary style="cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
+                  {% if err.level == 'CRITICAL' %}
+                    <span class="badge badge-red">CRITICAL</span>
+                  {% elif err.level == 'ERROR' %}
+                    <span class="badge" style="background:rgba(255,59,48,0.15);color:#FF3B30;">ERROR</span>
+                  {% else %}
+                    <span class="badge badge-yellow">{{ err.level }}</span>
+                  {% endif %}
+                  <code style="font-size:0.75rem;color:rgba(255,255,255,0.5);">{{ err.source }}</code>
+                </div>
+                <div style="font-size:0.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ err.message[:200] }}</div>
+              </div>
+              <div class="text-muted text-sm" style="white-space:nowrap;">
+                {{ err.timestamp.strftime('%b %d %H:%M') }}
+              </div>
+            </summary>
+            <div style="margin-top:0.8rem;padding:0.8rem;background:rgba(0,0,0,0.3);border-radius:6px;font-size:0.8rem;">
+              {% if err.request_method %}
+                <div style="margin-bottom:0.5rem;">
+                  <span class="text-muted">Request:</span>
+                  <code>{{ err.request_method }} {{ err.request_url }}</code>
+                </div>
+              {% endif %}
+              {% if err.ip_address %}
+                <div style="margin-bottom:0.5rem;">
+                  <span class="text-muted">IP:</span> {{ err.ip_address }}
+                </div>
+              {% endif %}
+              <div style="margin-bottom:0.5rem;">
+                <span class="text-muted">Message:</span>
+                <div style="margin-top:0.3rem;white-space:pre-wrap;word-break:break-all;">{{ err.message }}</div>
+              </div>
+              {% if err.traceback %}
+                <div style="margin-top:0.5rem;">
+                  <span class="text-muted">Traceback:</span>
+                  <pre style="margin-top:0.3rem;white-space:pre-wrap;word-break:break-all;color:#FF6B6B;font-size:0.75rem;max-height:300px;overflow-y:auto;">{{ err.traceback }}</pre>
+                </div>
+              {% endif %}
+            </div>
+          </details>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">No errors in the last {{ days }} day{{ 's' if days != 1 else '' }}. Everything is running smoothly.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

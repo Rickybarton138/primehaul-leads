@@ -119,6 +119,11 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Error tracking middleware + DB log handler
+from app.error_tracking import ErrorTrackingMiddleware, DBLogHandler  # noqa: E402
+app.add_middleware(ErrorTrackingMiddleware)
+logging.getLogger("primehaul").addHandler(DBLogHandler())
+
 
 # Global error handler — log full tracebacks and return a user-friendly page
 @app.exception_handler(500)
@@ -279,6 +284,20 @@ def _process_and_save_image(
         "file_size_bytes": file_size,
         "mime_type": "image/jpeg",
     }
+
+
+# ===================================================================
+#  HEALTH CHECK
+# ===================================================================
+@app.get("/health")
+async def health_check(db: Session = Depends(get_db)):
+    """Health check endpoint for monitoring and Railway."""
+    from sqlalchemy import text
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "degraded", "database": str(e)}
 
 
 # ===================================================================

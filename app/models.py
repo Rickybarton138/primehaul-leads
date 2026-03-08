@@ -311,6 +311,29 @@ class StripeEvent(Base):
 # ---------------------------------------------------------------------------
 # Social Media Automation
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Error Log (application error tracking)
+# ---------------------------------------------------------------------------
+class ErrorLog(Base):
+    __tablename__ = "error_logs"
+    __table_args__ = (
+        Index("idx_error_logs_timestamp", "timestamp"),
+        Index("idx_error_logs_level", "level"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    level = Column(String(20), nullable=False)  # ERROR / WARNING / CRITICAL
+    source = Column(String(100), nullable=False)  # module or route that raised it
+    message = Column(Text, nullable=False)
+    traceback = Column(Text)
+    request_url = Column(String(500))
+    request_method = Column(String(10))
+    user_agent = Column(String(500))
+    ip_address = Column(String(50))
+    extra = Column(JSONB)  # any additional context
+
+
 class SocialPost(Base):
     __tablename__ = "social_posts"
 

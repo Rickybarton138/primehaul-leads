@@ -1,0 +1,208 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+  <div class="page-header">
+    <h1>Funnel Analytics</h1>
+    <div style="display:flex;gap:0.5rem;">
+      <a href="/admin/analytics?days=7" class="btn btn-sm {% if days == 7 %}btn-accent{% else %}btn-ghost{% endif %}">7 days</a>
+      <a href="/admin/analytics?days=30" class="btn btn-sm {% if days == 30 %}btn-accent{% else %}btn-ghost{% endif %}">30 days</a>
+      <a href="/admin/analytics?days=90" class="btn btn-sm {% if days == 90 %}btn-accent{% else %}btn-ghost{% endif %}">90 days</a>
+    </div>
+  </div>
+
+  <!-- Revenue stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value text-accent">&pound;{{ "%.2f"|format(revenue.total_gbp) }}</div>
+      <div class="stat-label">Revenue ({{ days }}d)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">&pound;{{ revenue.avg_estimate|int }}</div>
+      <div class="stat-label">Avg Move Estimate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ revenue.avg_cbm }} m&sup3;</div>
+      <div class="stat-label">Avg CBM</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ funnel.purchased }}</div>
+      <div class="stat-label">Leads Purchased</div>
+    </div>
+  </div>
+
+  <!-- Conversion Funnel -->
+  <div class="card" style="margin-top:1.5rem;">
+    <div class="card-header"><h3>Conversion Funnel</h3></div>
+    <div class="card-body">
+      <div style="display:grid;gap:0;">
+        <!-- Stage 1: Started -->
+        <div style="padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+            <span style="font-weight:500;">Survey Started</span>
+            <span class="text-accent" style="font-size:1.2rem;font-weight:700;">{{ funnel.started }}</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;">
+            <div style="background:#2ee59d;height:100%;width:100%;border-radius:4px;"></div>
+          </div>
+        </div>
+        <!-- Stage 2: Photos -->
+        <div style="padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+            <span style="font-weight:500;">Photos Uploaded</span>
+            <span style="font-size:1.2rem;font-weight:700;">{{ funnel.with_photos }} <span class="text-muted text-sm">({{ funnel.photo_rate }}%)</span></span>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;">
+            <div style="background:#1877F2;height:100%;width:{{ funnel.photo_rate }}%;border-radius:4px;"></div>
+          </div>
+        </div>
+        <!-- Stage 3: Submitted -->
+        <div style="padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+            <span style="font-weight:500;">Contact Submitted</span>
+            <span style="font-size:1.2rem;font-weight:700;">{{ funnel.submitted }} <span class="text-muted text-sm">({{ funnel.submit_rate }}%)</span></span>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;">
+            <div style="background:#FF9500;height:100%;width:{{ funnel.submit_rate }}%;border-radius:4px;"></div>
+          </div>
+        </div>
+        <!-- Stage 4: Purchased -->
+        <div style="padding:1rem 0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+            <span style="font-weight:500;">Lead Purchased</span>
+            <span style="font-size:1.2rem;font-weight:700;">{{ funnel.purchased }} <span class="text-muted text-sm">({{ funnel.purchase_rate }}%)</span></span>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;">
+            <div style="background:#AF52DE;height:100%;width:{{ funnel.purchase_rate }}%;border-radius:4px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-top:1.5rem;">
+    <!-- Notifications -->
+    <div class="card">
+      <div class="card-header"><h3>Notifications</h3></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div style="text-align:center;">
+            <div style="font-size:1.5rem;font-weight:700;">{{ notifications.sent }}</div>
+            <div class="text-muted text-sm">Alerts Sent</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:1.5rem;font-weight:700;">{{ notifications.conversion }}%</div>
+            <div class="text-muted text-sm">Alert-to-Purchase</div>
+          </div>
+        </div>
+        <div style="margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div style="text-align:center;">
+            <div style="font-size:1.5rem;font-weight:700;">{{ emails.sent }}</div>
+            <div class="text-muted text-sm">Emails Sent</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:1.5rem;font-weight:700;color:#FF3B30;">{{ emails.failed }}</div>
+            <div class="text-muted text-sm">Failed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lead Status Breakdown -->
+    <div class="card">
+      <div class="card-header"><h3>Lead Status</h3></div>
+      <div class="card-body">
+        {% for status, count in status_map.items() %}
+          <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <span>
+              {% if status == 'active' %}
+                <span class="badge badge-green">{{ status }}</span>
+              {% elif status == 'submitted' %}
+                <span class="badge badge-blue">{{ status }}</span>
+              {% elif status == 'expired' %}
+                <span class="badge badge-red">{{ status }}</span>
+              {% elif status == 'in_progress' %}
+                <span class="badge badge-yellow">{{ status }}</span>
+              {% else %}
+                <span class="badge badge-muted">{{ status }}</span>
+              {% endif %}
+            </span>
+            <span style="font-weight:600;">{{ count }}</span>
+          </div>
+        {% endfor %}
+        {% if not status_map %}
+          <p class="text-muted text-sm">No leads in this period.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-top:1.5rem;">
+    <!-- Top Companies -->
+    <div class="card">
+      <div class="card-header"><h3>Top Companies</h3></div>
+      <div class="card-body">
+        {% if top_companies %}
+          {% for name, purchases, spent in top_companies %}
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div>
+                <div style="font-weight:500;">{{ name }}</div>
+                <div class="text-muted text-sm">{{ purchases }} leads purchased</div>
+              </div>
+              <div style="font-weight:600;color:#2ee59d;">&pound;{{ "%.2f"|format(spent / 100) }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted text-sm">No purchases yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Property Types -->
+    <div class="card">
+      <div class="card-header"><h3>Property Types</h3></div>
+      <div class="card-body">
+        {% if property_types %}
+          {% set max_count = property_types[0][1] if property_types else 1 %}
+          {% for ptype, count in property_types %}
+            <div style="padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;">
+                <span style="font-weight:500;">{{ ptype or 'Unknown' }}</span>
+                <span class="text-muted">{{ count }}</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.06);border-radius:4px;height:6px;overflow:hidden;">
+                <div style="background:#1877F2;height:100%;width:{{ (count / max_count * 100)|round }}%;border-radius:4px;"></div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted text-sm">No data yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Volume -->
+  <div class="card" style="margin-top:1.5rem;">
+    <div class="card-header"><h3>Daily Lead Volume</h3></div>
+    <div class="card-body">
+      {% if daily_leads %}
+        <div style="display:flex;align-items:flex-end;gap:2px;height:120px;overflow-x:auto;padding-bottom:1.5rem;">
+          {% set max_day = daily_leads|map(attribute=1)|max %}
+          {% for day, count in daily_leads %}
+            <div style="display:flex;flex-direction:column;align-items:center;min-width:24px;flex:1;">
+              <div style="font-size:0.65rem;margin-bottom:2px;">{{ count }}</div>
+              <div style="background:#2ee59d;width:100%;border-radius:2px 2px 0 0;height:{{ (count / max_day * 100)|round if max_day else 0 }}px;min-height:2px;"></div>
+              <div style="font-size:0.55rem;color:rgba(255,255,255,0.3);margin-top:2px;white-space:nowrap;">{{ day.strftime('%d') }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted text-sm">No data yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
