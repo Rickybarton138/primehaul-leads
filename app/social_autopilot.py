@@ -637,8 +637,38 @@ def check_x_engagement(tweet_id: str) -> Optional[Dict]:
         return None
 
 
+def check_instagram_engagement(media_id: str) -> Optional[Dict]:
+    """Fetch engagement metrics for an Instagram post."""
+    token = settings.META_PAGE_ACCESS_TOKEN
+    if not token or not media_id:
+        return None
+    try:
+        url = f"https://graph.facebook.com/v19.0/{media_id}/insights"
+        resp = httpx.get(
+            url,
+            params={
+                "metric": "impressions,reach,likes,comments,shares",
+                "access_token": token,
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        data = resp.json().get("data", [])
+        metrics = {item["name"]: item["values"][0]["value"] for item in data if item.get("values")}
+        return {
+            "likes": metrics.get("likes", 0),
+            "comments": metrics.get("comments", 0),
+            "shares": metrics.get("shares", 0),
+            "impressions": metrics.get("impressions", 0),
+        }
+    except Exception as e:
+        logger.error(f"Instagram engagement check failed: {e}")
+        return None
+
+
 ENGAGEMENT_CHECKERS = {
     "facebook": check_facebook_engagement,
+    "instagram": check_instagram_engagement,
     "x": check_x_engagement,
 }
 
