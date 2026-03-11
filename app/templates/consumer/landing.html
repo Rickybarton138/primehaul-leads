@@ -11,6 +11,27 @@
   <meta property="og:description" content="AI-powered moving estimates. Snap photos, get an instant quote, and compare prices from local removal companies.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.primehaul.co.uk/">
+  <meta property="og:locale" content="en_GB">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="PrimeHaul - Free Moving Quote in 5 Minutes">
+  <meta name="twitter:description" content="AI-powered moving estimates. Snap photos, get an instant quote, and compare prices from local removal companies.">
+  {% if config.GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ config.GOOGLE_SITE_VERIFICATION }}">{% endif %}
+  {% if config.GOOGLE_ANALYTICS_ID %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ config.GOOGLE_ANALYTICS_ID }}"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ config.GOOGLE_ANALYTICS_ID }}');</script>
+  {% endif %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "PrimeHaul",
+    "url": "https://www.primehaul.co.uk/",
+    "description": "Free AI-powered moving estimates for UK homes. Compare quotes from trusted local removal companies.",
+    "areaServed": {"@type": "Country", "name": "United Kingdom"},
+    "serviceType": ["Removals", "House Moving", "Man and Van", "Office Relocation"],
+    "sameAs": []
+  }
+  </script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -598,9 +619,35 @@
     <a href="/start" class="hero-cta" id="bottomCta">Start Free Quote</a>
   </section>
 
+  <!-- Popular Areas -->
+  <section class="section" style="padding-bottom:1rem">
+    <div class="section-header">
+      <h2>Popular Removal Areas</h2>
+      <p>We cover the whole UK. Find trusted removal companies near you.</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:0.5rem;max-width:900px;margin:0 auto">
+      <a href="/removals/london" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">London</a>
+      <a href="/removals/manchester" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Manchester</a>
+      <a href="/removals/birmingham" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Birmingham</a>
+      <a href="/removals/leeds" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Leeds</a>
+      <a href="/removals/glasgow" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Glasgow</a>
+      <a href="/removals/edinburgh" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Edinburgh</a>
+      <a href="/removals/liverpool" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Liverpool</a>
+      <a href="/removals/bristol" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Bristol</a>
+      <a href="/removals/sheffield" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Sheffield</a>
+      <a href="/removals/newcastle" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Newcastle</a>
+      <a href="/removals/cardiff" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Cardiff</a>
+      <a href="/removals/nottingham" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Nottingham</a>
+      <a href="/removals/brighton" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Brighton</a>
+      <a href="/removals/cambridge" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Cambridge</a>
+      <a href="/removals/oxford" style="color:var(--accent);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">Oxford</a>
+      <a href="/removals" style="color:var(--text-muted);font-size:0.85rem;text-decoration:none;padding:0.35rem 0.75rem;border:1px solid var(--glass-border);border-radius:8px;background:var(--glass-bg)">View all 60+ areas &rarr;</a>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer class="footer">
-    <p>&copy; {{ now().year if now is defined else "2026" }} PrimeHaul Ltd. All rights reserved.</p>
+    <p>&copy; {{ now().year if now is defined else "2026" }} PrimeHaul Ltd. All rights reserved. | <a href="/privacy" style="color:var(--accent);text-decoration:none">Privacy</a> | <a href="/terms" style="color:var(--accent);text-decoration:none">Terms</a> | <a href="/removals" style="color:var(--accent);text-decoration:none">All Areas</a></p>
   </footer>
 
   <script>

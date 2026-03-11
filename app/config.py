@@ -46,6 +46,10 @@ class Settings:
     SOCIAL_AUTO_PUBLISH: bool = os.getenv("SOCIAL_AUTO_PUBLISH", "true").lower() == "true"
     SOCIAL_POSTS_PER_DAY: int = int(os.getenv("SOCIAL_POSTS_PER_DAY", "2"))
 
+    # Analytics & SEO
+    GOOGLE_ANALYTICS_ID: str = os.getenv("GOOGLE_ANALYTICS_ID", "")  # e.g. G-XXXXXXXXXX
+    GOOGLE_SITE_VERIFICATION: str = os.getenv("GOOGLE_SITE_VERIFICATION", "")  # Search Console verification code
+
 
 settings = Settings()
 

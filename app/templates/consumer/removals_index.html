@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Removal Companies Across the UK | {{ total_cities }}+ Areas | PrimeHaul</title>
+  <meta name="description" content="Find trusted removal companies across the UK. PrimeHaul covers {{ total_cities }}+ cities and towns. Get free AI-powered moving quotes in minutes.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="{{ base_url }}/removals">
+  <meta property="og:title" content="UK Removal Companies | PrimeHaul">
+  <meta property="og:description" content="Find removal companies in {{ total_cities }}+ UK cities. Free AI-powered moving estimates.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ base_url }}/removals">
+  <meta property="og:locale" content="en_GB">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "Home", "item": "{{ base_url }}/"},
+      {"@type": "ListItem", "position": 2, "name": "Removals", "item": "{{ base_url }}/removals"}
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0b0b0c; --card: #141416; --card-border: rgba(255,255,255,0.06);
+      --text: #ffffff; --text-muted: #8a8a8e; --accent: #2ee59d;
+      --accent-glow: rgba(46,229,157,0.15); --radius: 16px; --radius-sm: 10px;
+      --glass-bg: rgba(20,20,22,0.7); --glass-border: rgba(255,255,255,0.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(11,11,12,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--card-border); }
+    .nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 1.25rem; height: 60px; }
+    .logo { font-size: 1.35rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+    .nav-cta { display: inline-block; padding: 0.5rem 1.25rem; background: var(--accent); color: #0b0b0c; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+    .breadcrumb { max-width: 1100px; margin: 0 auto; padding: 5rem 1.25rem 0; font-size: 0.85rem; color: var(--text-muted); }
+    .breadcrumb a { color: var(--accent); text-decoration: none; }
+    .hero { padding: 2rem 1.25rem 3rem; text-align: center; }
+    .hero h1 { font-size: clamp(1.75rem, 5vw, 2.5rem); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 1rem; }
+    .hero h1 .accent { color: var(--accent); }
+    .hero-sub { font-size: 1.05rem; color: var(--text-muted); max-width: 550px; margin: 0 auto 2rem; }
+    .hero-cta { display: inline-block; padding: 1rem 2.5rem; background: var(--accent); color: #0b0b0c; border-radius: var(--radius-sm); font-size: 1.1rem; font-weight: 700; text-decoration: none; box-shadow: 0 0 30px rgba(46,229,157,0.2); }
+    .section { padding: 2rem 1.25rem; max-width: 1100px; margin: 0 auto; }
+    .region-group { margin-bottom: 2rem; }
+    .region-title { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); }
+    .city-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .city-link { display: block; padding: 0.6rem 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); text-decoration: none; color: var(--text); font-size: 0.9rem; transition: border-color 0.2s; }
+    .city-link:hover { border-color: var(--accent); }
+    .footer { border-top: 1px solid var(--card-border); padding: 2rem 1.25rem; text-align: center; font-size: 0.85rem; color: var(--text-muted); }
+    .footer a { color: var(--accent); text-decoration: none; }
+    @media (min-width: 640px) { .city-list { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 900px) { .city-list { grid-template-columns: repeat(5, 1fr); } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="logo">PrimeHaul</a>
+      <a href="/start?utm_source=seo&utm_medium=geo&utm_campaign=removals-index" class="nav-cta">Get Free Quote</a>
+    </div>
+  </nav>
+
+  <div class="breadcrumb">
+    <a href="/">Home</a> &rsaquo; Removals
+  </div>
+
+  <section class="hero">
+    <h1>Removal Companies Across the <span class="accent">UK</span></h1>
+    <p class="hero-sub">PrimeHaul covers {{ total_cities }}+ cities and towns across England, Scotland, Wales, and Northern Ireland. Find trusted removal companies in your area.</p>
+    <a href="/start?utm_source=seo&utm_medium=geo&utm_campaign=removals-index" class="hero-cta">Get Your Free Quote</a>
+  </section>
+
+  <section class="section">
+    {% for region, cities in regions.items() | sort %}
+    <div class="region-group">
+      <h2 class="region-title">{{ region }}</h2>
+      <div class="city-list">
+        {% for c in cities %}
+        <a href="/removals/{{ c.slug }}" class="city-link">{{ c.name }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <footer class="footer">
+    <p>&copy; 2026 PrimeHaul Ltd. All rights reserved. | <a href="/privacy">Privacy</a> | <a href="/terms">Terms</a></p>
+  </footer>
+</body>
+</html>

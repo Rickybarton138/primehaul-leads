@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ from_city.name }} to {{ to_city.name }} Removals | From {{ '\u00a3' }}{{ price_low }} | PrimeHaul</title>
+  <meta name="description" content="Moving from {{ from_city.name }} to {{ to_city.name }}? Get free removal quotes. {{ distance }} miles, estimated {{ '\u00a3' }}{{ price_low }}-{{ '\u00a3' }}{{ price_high }}. AI-powered instant estimates from trusted companies.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="{{ base_url }}/removals/{{ from_slug }}-to-{{ to_slug }}">
+  <meta property="og:title" content="{{ from_city.name }} to {{ to_city.name }} Removals | PrimeHaul">
+  <meta property="og:description" content="Free removal quotes for {{ from_city.name }} to {{ to_city.name }}. {{ distance }} miles, from {{ '\u00a3' }}{{ price_low }}.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ base_url }}/removals/{{ from_slug }}-to-{{ to_slug }}">
+  <meta property="og:locale" content="en_GB">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "Home", "item": "{{ base_url }}/"},
+      {"@type": "ListItem", "position": 2, "name": "Removals", "item": "{{ base_url }}/removals"},
+      {"@type": "ListItem", "position": 3, "name": "{{ from_city.name }}", "item": "{{ base_url }}/removals/{{ from_slug }}"},
+      {"@type": "ListItem", "position": 4, "name": "{{ from_city.name }} to {{ to_city.name }}", "item": "{{ base_url }}/removals/{{ from_slug }}-to-{{ to_slug }}"}
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "{{ from_city.name }} to {{ to_city.name }} Removal Service",
+    "description": "Professional removal services from {{ from_city.name }} to {{ to_city.name }}. Approximately {{ distance }} miles. Estimated cost {{ '\u00a3' }}{{ price_low }}-{{ '\u00a3' }}{{ price_high }}.",
+    "provider": {"@type": "Organization", "name": "PrimeHaul", "url": "{{ base_url }}/"},
+    "areaServed": [
+      {"@type": "City", "name": "{{ from_city.name }}"},
+      {"@type": "City", "name": "{{ to_city.name }}"}
+    ],
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "GBP",
+      "description": "Free estimate and quotes"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How much does it cost to move from {{ from_city.name }} to {{ to_city.name }}?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A typical removal from {{ from_city.name }} to {{ to_city.name }} (approximately {{ distance }} miles) costs between {{ '\u00a3' }}{{ price_low }} and {{ '\u00a3' }}{{ price_high }}, depending on the size of your home. Get a free, personalised AI estimate from PrimeHaul in just 5 minutes."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How long does it take to move from {{ from_city.name }} to {{ to_city.name }}?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The journey from {{ from_city.name }} to {{ to_city.name }} is approximately {{ distance }} miles. Including loading and unloading, most moves take between half a day and a full day depending on the volume of items."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I get a same-day removal from {{ from_city.name }} to {{ to_city.name }}?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Some removal companies offer same-day or next-day moves from {{ from_city.name }} to {{ to_city.name }}, subject to availability. Get your free PrimeHaul estimate now and mention your urgency when companies contact you."
+        }
+      }
+    ]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0b0b0c; --card: #141416; --card-border: rgba(255,255,255,0.06);
+      --text: #ffffff; --text-muted: #8a8a8e; --accent: #2ee59d;
+      --accent-glow: rgba(46,229,157,0.15); --radius: 16px; --radius-sm: 10px;
+      --glass-bg: rgba(20,20,22,0.7); --glass-border: rgba(255,255,255,0.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(11,11,12,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--card-border); }
+    .nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 1.25rem; height: 60px; }
+    .logo { font-size: 1.35rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+    .nav-cta { display: inline-block; padding: 0.5rem 1.25rem; background: var(--accent); color: #0b0b0c; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+    .breadcrumb { max-width: 1100px; margin: 0 auto; padding: 5rem 1.25rem 0; font-size: 0.85rem; color: var(--text-muted); }
+    .breadcrumb a { color: var(--accent); text-decoration: none; }
+    .hero { padding: 2rem 1.25rem 3rem; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -50%; left: 50%; transform: translateX(-50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(46,229,157,0.08) 0%, transparent 70%); pointer-events: none; }
+    .hero h1 { font-size: clamp(1.6rem, 4.5vw, 2.5rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 1rem; max-width: 750px; margin-left: auto; margin-right: auto; }
+    .hero h1 .accent { color: var(--accent); }
+    .hero-sub { font-size: 1.05rem; color: var(--text-muted); max-width: 580px; margin: 0 auto 2rem; }
+    .hero-cta { display: inline-block; padding: 1rem 2.5rem; background: var(--accent); color: #0b0b0c; border-radius: var(--radius-sm); font-size: 1.1rem; font-weight: 700; text-decoration: none; box-shadow: 0 0 30px rgba(46,229,157,0.2); transition: transform 0.15s; }
+    .hero-cta:hover { transform: translateY(-2px); }
+    .section { padding: 3rem 1.25rem; max-width: 1100px; margin: 0 auto; }
+    .section-header { text-align: center; margin-bottom: 2rem; }
+    .section-header h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .section-header p { color: var(--text-muted); max-width: 520px; margin: 0 auto; }
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center; margin-bottom: 2rem; }
+    .stat-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 1.5rem; }
+    .stat-val { font-size: 1.75rem; font-weight: 800; color: var(--accent); }
+    .stat-label { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 1.5rem; }
+    .card h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .card p { font-size: 0.9rem; color: var(--text-muted); }
+    .grid-3 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    .faq-list { max-width: 700px; margin: 0 auto; }
+    .faq-item { border-bottom: 1px solid var(--glass-border); }
+    .faq-q { width: 100%; background: none; border: none; padding: 1.25rem 0; color: var(--text); font-size: 1rem; font-weight: 600; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .faq-q::after { content: '+'; font-size: 1.25rem; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; }
+    .faq-item.open .faq-q::after { transform: rotate(45deg); color: var(--accent); }
+    .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .faq-item.open .faq-a { max-height: 300px; padding-bottom: 1.25rem; }
+    .faq-a p { font-size: 0.95rem; color: var(--text-muted); }
+    .link-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .link-card { display: block; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); padding: 1rem 1.25rem; text-decoration: none; color: var(--text); transition: border-color 0.2s; }
+    .link-card:hover { border-color: var(--accent); }
+    .link-card .label { font-size: 0.9rem; font-weight: 600; }
+    .link-card .sub { font-size: 0.8rem; color: var(--text-muted); }
+    .bottom-cta { text-align: center; padding: 3rem 1.25rem; }
+    .bottom-cta h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .bottom-cta p { color: var(--text-muted); margin-bottom: 2rem; }
+    .footer { border-top: 1px solid var(--card-border); padding: 2rem 1.25rem; text-align: center; font-size: 0.85rem; color: var(--text-muted); }
+    .footer a { color: var(--accent); text-decoration: none; }
+    @media (min-width: 640px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } .link-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 500px) { .stats-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="logo">PrimeHaul</a>
+      <a href="/start?utm_source=seo&utm_medium=route&utm_campaign={{ from_slug }}-to-{{ to_slug }}" class="nav-cta">Get Free Quote</a>
+    </div>
+  </nav>
+
+  <div class="breadcrumb">
+    <a href="/">Home</a> &rsaquo; <a href="/removals">Removals</a> &rsaquo; <a href="/removals/{{ from_slug }}">{{ from_city.name }}</a> &rsaquo; {{ from_city.name }} to {{ to_city.name }}
+  </div>
+
+  <section class="hero">
+    <h1><span class="accent">{{ from_city.name }}</span> to <span class="accent">{{ to_city.name }}</span> Removals</h1>
+    <p class="hero-sub">Moving from {{ from_city.name }} to {{ to_city.name }}? Get a free AI-powered estimate in minutes and compare quotes from trusted removal companies.</p>
+    <a href="/start?utm_source=seo&utm_medium=route&utm_campaign={{ from_slug }}-to-{{ to_slug }}" class="hero-cta">Get Your Free Quote</a>
+  </section>
+
+  <!-- Route stats -->
+  <section class="section">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-val">{{ distance }} mi</div>
+        <div class="stat-label">Distance</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">&pound;{{ price_low }}-{{ price_high }}</div>
+        <div class="stat-label">Typical cost range</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">5 min</div>
+        <div class="stat-label">Time to get estimate</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- What's included -->
+  <section class="section">
+    <div class="section-header">
+      <h2>What's Included in Your {{ from_city.name }} to {{ to_city.name }} Quote</h2>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <h3>Door-to-Door Service</h3>
+        <p>Full loading at your {{ from_city.name }} property, transport to {{ to_city.name }}, and complete unloading at your new home.</p>
+      </div>
+      <div class="card">
+        <h3>Insurance Cover</h3>
+        <p>All our partner companies carry goods-in-transit insurance to protect your belongings during the {{ distance }}-mile journey.</p>
+      </div>
+      <div class="card">
+        <h3>Flexible Options</h3>
+        <p>Choose from full packing, part packing, or load-only services. Add storage, cleaning, or specialist item handling as needed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section">
+    <div class="section-header">
+      <h2>{{ from_city.name }} to {{ to_city.name }} Moving FAQ</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" type="button">How much does it cost to move from {{ from_city.name }} to {{ to_city.name }}?</button>
+        <div class="faq-a">
+          <p>A typical removal from {{ from_city.name }} to {{ to_city.name }} (approximately {{ distance }} miles) costs between &pound;{{ price_low }} and &pound;{{ price_high }}, depending on the size of your home and the volume of items. Get a free, personalised AI estimate from PrimeHaul in just 5 minutes.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">How long does a {{ from_city.name }} to {{ to_city.name }} removal take?</button>
+        <div class="faq-a">
+          <p>The journey itself is approximately {{ distance }} miles. Including loading and unloading, most moves take between half a day and a full day depending on the volume of your items and access at both properties.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">When is the cheapest time to move from {{ from_city.name }} to {{ to_city.name }}?</button>
+        <div class="faq-a">
+          <p>Moving mid-week (Tuesday-Thursday) and during off-peak months (October-February) is typically 10-20% cheaper. Avoiding end-of-month dates and school holidays can also help you save on your {{ from_city.name }} to {{ to_city.name }} removal.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Related routes & reverse -->
+  <section class="section">
+    <div class="section-header">
+      <h2>Related Moving Routes</h2>
+    </div>
+    <div class="link-grid">
+      {% if reverse_exists %}
+      <a href="/removals/{{ to_slug }}-to-{{ from_slug }}" class="link-card">
+        <div class="label">{{ to_city.name }} to {{ from_city.name }}</div>
+        <div class="sub">Reverse route &rarr;</div>
+      </a>
+      {% endif %}
+      {% for route in related_routes %}
+      <a href="{{ route.url }}" class="link-card">
+        <div class="label">{{ route.from_name }} to {{ route.to_name }}</div>
+        <div class="sub">Get free quote &rarr;</div>
+      </a>
+      {% endfor %}
+      <a href="/removals/{{ from_slug }}" class="link-card">
+        <div class="label">All {{ from_city.name }} removals</div>
+        <div class="sub">See all routes &rarr;</div>
+      </a>
+      <a href="/removals/{{ to_slug }}" class="link-card">
+        <div class="label">All {{ to_city.name }} removals</div>
+        <div class="sub">See all routes &rarr;</div>
+      </a>
+    </div>
+  </section>
+
+  <section class="bottom-cta">
+    <h2>Get your free {{ from_city.name }} to {{ to_city.name }} quote now</h2>
+    <p>Snap photos of your rooms, get an instant AI estimate, and compare quotes from trusted companies.</p>
+    <a href="/start?utm_source=seo&utm_medium=route&utm_campaign={{ from_slug }}-to-{{ to_slug }}" class="hero-cta">Start Free Quote</a>
+  </section>
+
+  <footer class="footer">
+    <p>&copy; 2026 PrimeHaul Ltd. All rights reserved. | <a href="/privacy">Privacy</a> | <a href="/terms">Terms</a></p>
+    <p style="margin-top:0.5rem"><a href="/removals">All UK Removal Areas</a></p>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.faq-item').forEach(function(item) {
+      item.querySelector('.faq-q').addEventListener('click', function() {
+        var isOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(function(fi) { fi.classList.remove('open'); });
+        if (!isOpen) item.classList.add('open');
+      });
+    });
+  </script>
+</body>
+</html>

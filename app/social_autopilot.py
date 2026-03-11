@@ -77,7 +77,27 @@ B2C_CONTENT_PILLARS = {
             "a 'you know you're moving when...' style joke",
         ],
     },
+    "local": {
+        "label": "Local Moving",
+        "prompts": [
+            "a moving tip specifically for people relocating in or out of {city}",
+            "why {city} is a popular destination for people moving house",
+            "what to know about moving to {city} — parking, access, or local tips",
+        ],
+    },
 }
+
+# Cities to rotate through for geo-targeted social posts
+GEO_TARGET_CITIES = [
+    ("london", "London"), ("manchester", "Manchester"), ("birmingham", "Birmingham"),
+    ("leeds", "Leeds"), ("glasgow", "Glasgow"), ("edinburgh", "Edinburgh"),
+    ("liverpool", "Liverpool"), ("bristol", "Bristol"), ("sheffield", "Sheffield"),
+    ("newcastle", "Newcastle"), ("nottingham", "Nottingham"), ("cardiff", "Cardiff"),
+    ("brighton", "Brighton"), ("cambridge", "Cambridge"), ("oxford", "Oxford"),
+    ("southampton", "Southampton"), ("leicester", "Leicester"), ("coventry", "Coventry"),
+    ("york", "York"), ("bath", "Bath"), ("exeter", "Exeter"), ("reading", "Reading"),
+    ("plymouth", "Plymouth"), ("hull", "Hull"), ("aberdeen", "Aberdeen"),
+]
 
 PLATFORM_SPECS = {
     "facebook": {"max_chars": 2000, "hashtag_count": 5, "tone": "conversational and warm"},
@@ -145,30 +165,66 @@ def _get_bold_font(size: int) -> ImageFont.FreeTypeFont:
 # Content Generation (OpenAI)
 # ---------------------------------------------------------------------------
 
+def _pick_geo_target() -> Optional[Dict[str, str]]:
+    """Pick a random city for geo-targeted content."""
+    slug, name = random.choice(GEO_TARGET_CITIES)
+    return {"slug": slug, "name": name}
+
+
+def _build_utm_link(city_slug: Optional[str] = None, platform: str = "social") -> str:
+    """Build a UTM-tagged link pointing to a geo page or homepage."""
+    base = settings.APP_URL.rstrip("/")
+    if "localhost" in base:
+        base = "https://www.primehaul.co.uk"
+    if city_slug:
+        return f"{base}/removals/{city_slug}?utm_source={platform}&utm_medium=social&utm_campaign=autopilot"
+    return f"{base}/start?utm_source={platform}&utm_medium=social&utm_campaign=autopilot"
+
+
 def generate_post_content(
     content_type: str,
     platform: str,
     config: Optional[SocialConfig] = None,
+    geo_target: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     """
     Use OpenAI to generate a social media post.
 
-    Returns: {"caption": "...", "hashtags": "...", "headline": "..."}
+    Returns: {"caption": "...", "hashtags": "...", "headline": "...", "link": "..."}
     """
     if not settings.OPENAI_API_KEY:
         logger.warning("OPENAI_API_KEY not set — skipping content generation")
-        return {"caption": "", "hashtags": "", "headline": ""}
+        return {"caption": "", "hashtags": "", "headline": "", "link": ""}
 
     pillar = B2C_CONTENT_PILLARS.get(content_type, B2C_CONTENT_PILLARS["tip"])
     topic_prompt = random.choice(pillar["prompts"])
     spec = PLATFORM_SPECS.get(platform, PLATFORM_SPECS["facebook"])
     tone = config.tone if config and config.tone else "friendly_professional"
 
+    # Geo-targeted content: substitute {city} in prompt
+    city_name = ""
+    city_slug = None
+    if geo_target:
+        city_name = geo_target["name"]
+        city_slug = geo_target["slug"]
+        topic_prompt = topic_prompt.replace("{city}", city_name)
+
+    link = _build_utm_link(city_slug, platform)
+
     system_msg = (
         "You are a social media copywriter for PrimeHaul, a UK-based service that gives "
         "people free AI-powered moving estimates. Our brand voice is helpful, modern, and "
         f"slightly witty. The tone should be: {tone.replace('_', ' ')}."
     )
+
+    city_instruction = ""
+    if city_name:
+        city_instruction = (
+            f"- Mention {city_name} naturally in the post (for local SEO)\n"
+            f"- Include the link: {link}\n"
+        )
+    else:
+        city_instruction = f"- Include the link: {link}\n"
 
     user_msg = (
         f"Write a {platform} post about {topic_prompt}.\n\n"
@@ -177,6 +233,7 @@ def generate_post_content(
         f"- Include {spec['hashtag_count']} relevant hashtags\n"
         f"- Tone: {spec['tone']}\n"
         f"- Include a subtle CTA mentioning free AI moving quotes from PrimeHaul\n"
+        f"{city_instruction}"
         f"- UK English spelling\n\n"
         f"Respond in JSON format:\n"
         f'{{"caption": "...", "hashtags": "#tag1 #tag2 ...", "headline": "short 5-8 word headline for the image card"}}'
@@ -199,10 +256,11 @@ def generate_post_content(
             "caption": data.get("caption", ""),
             "hashtags": data.get("hashtags", ""),
             "headline": data.get("headline", ""),
+            "link": link,
         }
     except Exception as e:
         logger.error(f"OpenAI content generation failed: {e}")
-        return {"caption": "", "hashtags": "", "headline": ""}
+        return {"caption": "", "hashtags": "", "headline": "", "link": ""}
 
 
 # ---------------------------------------------------------------------------
@@ -715,8 +773,15 @@ def generate_weekly_content():
                     if existing:
                         continue
 
+                    # Geo-target ~40% of posts for local SEO
+                    geo_target = None
+                    if content_type == "local" or random.random() < 0.4:
+                        geo_target = _pick_geo_target()
+                        if content_type != "local":
+                            content_type = "local"
+
                     # Generate content
-                    content = generate_post_content(content_type, platform, config)
+                    content = generate_post_content(content_type, platform, config, geo_target)
                     if not content["caption"]:
                         continue
 

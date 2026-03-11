@@ -147,9 +147,11 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # ---------------------------------------------------------------------------
 from app.company_routes import router as company_router  # noqa: E402
 from app.admin_routes import router as admin_router  # noqa: E402
+from app.seo_routes import router as seo_router  # noqa: E402
 
 app.include_router(company_router)
 app.include_router(admin_router)
+app.include_router(seo_router)
 
 
 # ---------------------------------------------------------------------------
@@ -323,7 +325,7 @@ async def terms_of_service(request: Request):
 
 @app.get("/")
 async def landing(request: Request):
-    return templates.TemplateResponse("consumer/landing.html", {"request": request})
+    return templates.TemplateResponse("consumer/landing.html", {"request": request, "config": settings})
 
 
 # 2. Start a new survey
