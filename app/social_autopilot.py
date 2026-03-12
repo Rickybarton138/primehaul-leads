@@ -321,7 +321,7 @@ def generate_social_image(
         cta_font = _get_bold_font(24)
         draw.text((60, 1010), "Get your free AI moving quote", fill=BRAND_ACCENT, font=cta_font)
         url_font = _get_font(22)
-        draw.text((60, 1042), "primehaul.co.uk", fill=BRAND_MUTED, font=url_font)
+        draw.text((60, 1042), "leads.primehaul.co.uk", fill=BRAND_MUTED, font=url_font)
 
         # Accent line above CTA
         draw.rectangle([(60, 970), (300, 974)], fill=BRAND_ACCENT)
