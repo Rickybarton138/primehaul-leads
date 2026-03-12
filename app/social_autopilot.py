@@ -321,7 +321,8 @@ def generate_social_image(
         cta_font = _get_bold_font(24)
         draw.text((60, 1010), "Get your free AI moving quote", fill=BRAND_ACCENT, font=cta_font)
         url_font = _get_font(22)
-        draw.text((60, 1042), "leads.primehaul.co.uk", fill=BRAND_MUTED, font=url_font)
+        display_url = settings.CANONICAL_DOMAIN.replace("https://", "").replace("http://", "").rstrip("/")
+        draw.text((60, 1042), display_url, fill=BRAND_MUTED, font=url_font)
 
         # Accent line above CTA
         draw.rectangle([(60, 970), (300, 974)], fill=BRAND_ACCENT)
@@ -354,7 +355,7 @@ def post_to_facebook(caption: str, image_path: Optional[str] = None) -> Optional
 
     try:
         if image_path and Path(image_path).exists():
-            url = f"https://graph.facebook.com/v19.0/{page_id}/photos"
+            url = f"https://graph.facebook.com/v21.0/{page_id}/photos"
             with open(image_path, "rb") as img_file:
                 resp = httpx.post(
                     url,
@@ -363,7 +364,7 @@ def post_to_facebook(caption: str, image_path: Optional[str] = None) -> Optional
                     timeout=60,
                 )
         else:
-            url = f"https://graph.facebook.com/v19.0/{page_id}/feed"
+            url = f"https://graph.facebook.com/v21.0/{page_id}/feed"
             resp = httpx.post(
                 url,
                 data={"message": caption, "access_token": token},
@@ -377,6 +378,40 @@ def post_to_facebook(caption: str, image_path: Optional[str] = None) -> Optional
 
     except Exception as e:
         logger.error(f"Facebook posting failed: {e}")
+        return None
+
+
+def _upload_image_to_s3(image_path: str) -> Optional[str]:
+    """Upload a social image to S3 and return its public URL.
+
+    Instagram requires a publicly accessible image URL.  This uploads
+    the generated image via the existing S3 storage layer and returns
+    the CDN/public URL.  Returns None if S3 is not configured.
+    """
+    from app.storage import _get_s3, S3_BUCKET, S3_PUBLIC_URL
+
+    s3 = _get_s3()
+    if not s3 or not S3_PUBLIC_URL:
+        return None
+
+    local = Path(image_path)
+    if not local.exists():
+        return None
+
+    s3_key = f"social/{local.name}"
+    try:
+        s3.put_object(
+            Bucket=S3_BUCKET,
+            Key=s3_key,
+            Body=local.read_bytes(),
+            ContentType="image/png",
+            CacheControl="public, max-age=604800",
+        )
+        public_url = f"{S3_PUBLIC_URL.rstrip('/')}/{s3_key}"
+        logger.info(f"Uploaded social image to S3: {public_url}")
+        return public_url
+    except Exception as e:
+        logger.error(f"S3 upload for social image failed: {e}")
         return None
 
 
@@ -394,17 +429,27 @@ def post_to_instagram(caption: str, image_path: Optional[str] = None) -> Optiona
 
     try:
         # Instagram requires a publicly accessible image URL.
-        # For now, we upload via the container creation flow.
-        # In production, the image should be hosted (e.g. on S3/CDN).
-        app_url = settings.APP_URL.rstrip("/")
-        # Convert local path to a URL path
-        rel_path = image_path.replace("\\", "/")
-        if rel_path.startswith("app/"):
-            rel_path = rel_path[4:]
-        image_url = f"{app_url}/{rel_path}"
+        # Upload to S3/CDN first, then pass that URL to the Graph API.
+        image_url = _upload_image_to_s3(image_path)
+        if not image_url:
+            logger.error(
+                "Instagram publish skipped — S3 not configured or upload failed. "
+                "Instagram requires a public image URL (set S3_* and S3_PUBLIC_URL env vars)."
+            )
+            return None
+
+        # Verify the image is reachable before creating the container
+        try:
+            head_resp = httpx.head(image_url, timeout=10, follow_redirects=True)
+            if head_resp.status_code != 200:
+                logger.error(f"Instagram image URL not reachable (HTTP {head_resp.status_code}): {image_url}")
+                return None
+        except Exception as e:
+            logger.error(f"Instagram image URL HEAD check failed: {e}")
+            return None
 
         # Step 1: Create media container
-        create_url = f"https://graph.facebook.com/v19.0/{ig_account_id}/media"
+        create_url = f"https://graph.facebook.com/v21.0/{ig_account_id}/media"
         create_resp = httpx.post(
             create_url,
             data={
@@ -418,7 +463,7 @@ def post_to_instagram(caption: str, image_path: Optional[str] = None) -> Optiona
         container_id = create_resp.json()["id"]
 
         # Step 2: Publish the container
-        publish_url = f"https://graph.facebook.com/v19.0/{ig_account_id}/media_publish"
+        publish_url = f"https://graph.facebook.com/v21.0/{ig_account_id}/media_publish"
         publish_resp = httpx.post(
             publish_url,
             data={
@@ -538,75 +583,79 @@ def _refresh_linkedin_token() -> Optional[str]:
 
 
 def post_to_linkedin(caption: str, image_path: Optional[str] = None) -> Optional[str]:
-    """Publish to LinkedIn Organization via API. Returns post URN or None."""
+    """Publish to LinkedIn Organization via the Posts API (rest/posts).
+
+    Uses the current LinkedIn APIs:
+    - Images API (/rest/images) for image upload (replaces deprecated v2/assets)
+    - Posts API (/rest/posts) for publishing (replaces deprecated v2/ugcPosts)
+    """
     token = settings.LINKEDIN_ACCESS_TOKEN
     org_id = settings.LINKEDIN_ORG_ID
     if not token or not org_id:
         logger.warning("LinkedIn credentials not configured — skipping")
         return None
 
+    author = f"urn:li:organization:{org_id}"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
+        "LinkedIn-Version": "202402",
         "X-Restli-Protocol-Version": "2.0.0",
     }
 
     try:
         image_urn = None
         if image_path and Path(image_path).exists():
-            # Step 1: Register image upload
-            register_url = "https://api.linkedin.com/v2/assets?action=registerUpload"
-            register_body = {
-                "registerUploadRequest": {
-                    "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
-                    "owner": f"urn:li:organization:{org_id}",
-                    "serviceRelationships": [
-                        {"relationshipType": "OWNER", "identifier": "urn:li:userGeneratedContent"}
-                    ],
+            # Step 1: Initialize image upload via Images API
+            init_url = "https://api.linkedin.com/rest/images?action=initializeUpload"
+            init_body = {
+                "initializeUploadRequest": {
+                    "owner": author,
                 }
             }
-            reg_resp = httpx.post(register_url, headers=headers, json=register_body, timeout=30)
-            reg_resp.raise_for_status()
-            upload_url = reg_resp.json()["value"]["uploadMechanism"][
-                "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"
-            ]["uploadUrl"]
-            image_urn = reg_resp.json()["value"]["asset"]
+            init_resp = httpx.post(init_url, headers=headers, json=init_body, timeout=30)
+            init_resp.raise_for_status()
+            init_data = init_resp.json()["value"]
+            upload_url = init_data["uploadUrl"]
+            image_urn = init_data["image"]
 
             # Step 2: Upload the image binary
             with open(image_path, "rb") as img_file:
                 upload_resp = httpx.put(
                     upload_url,
-                    headers={"Authorization": f"Bearer {token}"},
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/octet-stream",
+                    },
                     content=img_file.read(),
                     timeout=60,
                 )
                 upload_resp.raise_for_status()
 
-        # Step 3: Create the share post
-        share_url = "https://api.linkedin.com/v2/ugcPosts"
-        share_body: Dict[str, Any] = {
-            "author": f"urn:li:organization:{org_id}",
-            "lifecycleState": "PUBLISHED",
-            "specificContent": {
-                "com.linkedin.ugc.ShareContent": {
-                    "shareCommentary": {"text": caption},
-                    "shareMediaCategory": "IMAGE" if image_urn else "NONE",
-                }
+        # Step 3: Create the post via Posts API
+        post_url = "https://api.linkedin.com/rest/posts"
+        post_body: Dict[str, Any] = {
+            "author": author,
+            "commentary": caption,
+            "visibility": "PUBLIC",
+            "distribution": {
+                "feedDistribution": "MAIN_FEED",
+                "targetEntities": [],
+                "thirdPartyDistributionChannels": [],
             },
-            "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"},
+            "lifecycleState": "PUBLISHED",
         }
 
         if image_urn:
-            share_body["specificContent"]["com.linkedin.ugc.ShareContent"]["media"] = [
-                {
-                    "status": "READY",
-                    "media": image_urn,
+            post_body["content"] = {
+                "media": {
+                    "id": image_urn,
                 }
-            ]
+            }
 
-        share_resp = httpx.post(share_url, headers=headers, json=share_body, timeout=30)
-        share_resp.raise_for_status()
-        post_urn = share_resp.headers.get("x-restli-id", share_resp.json().get("id"))
+        post_resp = httpx.post(post_url, headers=headers, json=post_body, timeout=30)
+        post_resp.raise_for_status()
+        post_urn = post_resp.headers.get("x-restli-id", "")
         logger.info(f"Posted to LinkedIn: {post_urn}")
         return post_urn
 
@@ -619,7 +668,7 @@ def post_to_linkedin(caption: str, image_path: Optional[str] = None) -> Optional
                 return post_to_linkedin(caption, image_path)  # Retry with new token
             logger.error("LinkedIn token refresh failed — cannot post")
         else:
-            logger.error(f"LinkedIn posting failed: {e}")
+            logger.error(f"LinkedIn posting failed ({e.response.status_code}): {e.response.text}")
         return None
     except Exception as e:
         logger.error(f"LinkedIn posting failed: {e}")
@@ -644,7 +693,7 @@ def check_facebook_engagement(post_id: str) -> Optional[Dict]:
     if not token or not post_id:
         return None
     try:
-        url = f"https://graph.facebook.com/v19.0/{post_id}"
+        url = f"https://graph.facebook.com/v21.0/{post_id}"
         resp = httpx.get(
             url,
             params={
@@ -699,7 +748,7 @@ def check_instagram_engagement(media_id: str) -> Optional[Dict]:
     if not token or not media_id:
         return None
     try:
-        url = f"https://graph.facebook.com/v19.0/{media_id}/insights"
+        url = f"https://graph.facebook.com/v21.0/{media_id}/insights"
         resp = httpx.get(
             url,
             params={
@@ -722,10 +771,38 @@ def check_instagram_engagement(media_id: str) -> Optional[Dict]:
         return None
 
 
+def check_linkedin_engagement(post_urn: str) -> Optional[Dict]:
+    """Fetch engagement metrics for a LinkedIn post via the Posts API."""
+    token = settings.LINKEDIN_ACCESS_TOKEN
+    if not token or not post_urn:
+        return None
+    try:
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "LinkedIn-Version": "202402",
+            "X-Restli-Protocol-Version": "2.0.0",
+        }
+        # Fetch social actions (likes, comments, shares) for the post
+        encoded_urn = post_urn.replace(":", "%3A").replace("(", "%28").replace(")", "%29")
+        url = f"https://api.linkedin.com/rest/socialActions/{encoded_urn}"
+        resp = httpx.get(url, headers=headers, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        return {
+            "likes": data.get("likesSummary", {}).get("totalLikes", 0),
+            "comments": data.get("commentsSummary", {}).get("totalFirstLevelComments", 0),
+            "shares": data.get("sharesSummary", {}).get("totalShares", 0) if "sharesSummary" in data else 0,
+        }
+    except Exception as e:
+        logger.error(f"LinkedIn engagement check failed: {e}")
+        return None
+
+
 ENGAGEMENT_CHECKERS = {
     "facebook": check_facebook_engagement,
     "instagram": check_instagram_engagement,
     "x": check_x_engagement,
+    "linkedin": check_linkedin_engagement,
 }
 
 
@@ -739,6 +816,14 @@ def generate_weekly_content():
     db = SessionLocal()
     try:
         config = _get_config(db)
+
+        # Guard against duplicate batch generation (min 1 hour between runs)
+        if config.last_generation_at:
+            elapsed = datetime.now(timezone.utc) - config.last_generation_at.replace(tzinfo=timezone.utc) \
+                if config.last_generation_at.tzinfo is None else datetime.now(timezone.utc) - config.last_generation_at
+            if elapsed < timedelta(hours=1):
+                logger.warning(f"Skipping generation — last run was {elapsed} ago (min 1 hour)")
+                return
         posts_per_day = config.posts_per_day or 2
         posting_times = config.posting_times or ["09:00", "18:00"]
         active_platforms = config.active_platforms or ["facebook", "instagram", "x", "linkedin"]
@@ -750,7 +835,14 @@ def generate_weekly_content():
             day = now + timedelta(days=day_offset + 1)  # Start from tomorrow
             for slot_idx in range(min(posts_per_day, len(posting_times))):
                 time_str = posting_times[slot_idx]
-                hour, minute = int(time_str.split(":")[0]), int(time_str.split(":")[1])
+                try:
+                    parts = time_str.split(":")
+                    hour, minute = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
+                    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+                        raise ValueError
+                except (ValueError, IndexError):
+                    logger.warning(f"Invalid posting time '{time_str}', skipping slot")
+                    continue
                 scheduled = day.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
                 # Pick a content type
@@ -913,6 +1005,8 @@ def check_all_engagement():
 def force_generate_batch(db: Session) -> int:
     """Force-generate a new batch of content. Returns count of posts created."""
     generate_weekly_content()
+    # Refresh the caller's session so it sees posts created by generate_weekly_content()
+    db.expire_all()
     return (
         db.query(SocialPost)
         .filter(SocialPost.status.in_(["scheduled", "draft"]))

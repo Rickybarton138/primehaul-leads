@@ -175,6 +175,50 @@ def _estimate_route_distance(from_slug: str, to_slug: str) -> int:
 
 
 # ---------------------------------------------------------------------------
+# llms.txt — Machine-readable business description for AI crawlers (GEO)
+# ---------------------------------------------------------------------------
+@router.get("/llms.txt", response_class=PlainTextResponse)
+async def llms_txt():
+    base_url = settings.CANONICAL_DOMAIN.rstrip("/")
+    cities_sample = ", ".join(c["name"] for c in list(UK_CITIES.values())[:15])
+    return f"""# PrimeHaul Leads
+> Free AI-powered moving estimates for UK house movers. Consumers upload room photos, receive instant AI inventory analysis and cost estimates, then connect with verified removal companies.
+
+## How It Works
+- Consumer takes an interactive moving survey with photo uploads
+- AI vision analyses room photos to extract a full inventory (items, dimensions, weight)
+- System calculates an instant cost estimate based on distance, volume, and access
+- Consumer submits contact details as a qualified lead
+- Verified removal companies purchase pre-qualified leads via the marketplace
+
+## Services
+- AI-powered moving inventory analysis
+- Instant removal cost estimates
+- Lead generation for removal companies
+- UK-wide coverage with local geo pages
+
+## Coverage
+- UK nationwide: {cities_sample}, and 45+ more cities
+- Popular routes: London to Manchester, London to Birmingham, Edinburgh to Glasgow, and 60+ more
+
+## Contact
+- Website: {base_url}
+- Start a quote: {base_url}/start
+
+## Key Facts
+- Free for consumers — no obligation
+- AI vision extracts item-level inventory from photos
+- Covers house moves, flat moves, office relocations
+- Distance-based and volume-based pricing model
+
+## Docs
+- All covered cities: {base_url}/removals
+- Privacy policy: {base_url}/privacy
+- Terms of service: {base_url}/terms
+"""
+
+
+# ---------------------------------------------------------------------------
 # robots.txt
 # ---------------------------------------------------------------------------
 @router.get("/robots.txt", response_class=PlainTextResponse)
@@ -189,6 +233,25 @@ Disallow: /company/
 Disallow: /api/
 Disallow: /webhooks/
 Disallow: /health
+
+# AI crawlers — allow indexing for GEO (Generative Engine Optimization)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
 
 Sitemap: {base_url}/sitemap.xml
 """
@@ -211,6 +274,22 @@ async def sitemap_xml():
     <lastmod>{now}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>""")
+
+    # Removals index page
+    urls.append(f"""  <url>
+    <loc>{base_url}/removals</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>""")
+
+    # llms.txt
+    urls.append(f"""  <url>
+    <loc>{base_url}/llms.txt</loc>
+    <lastmod>{now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>""")
 
     # City pages
