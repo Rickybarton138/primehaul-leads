@@ -173,9 +173,7 @@ def _pick_geo_target() -> Optional[Dict[str, str]]:
 
 def _build_utm_link(city_slug: Optional[str] = None, platform: str = "social") -> str:
     """Build a UTM-tagged link pointing to a geo page or homepage."""
-    base = settings.APP_URL.rstrip("/")
-    if "localhost" in base:
-        base = "https://www.primehaul.co.uk"
+    base = settings.CANONICAL_DOMAIN.rstrip("/")
     if city_slug:
         return f"{base}/removals/{city_slug}?utm_source={platform}&utm_medium=social&utm_campaign=autopilot"
     return f"{base}/start?utm_source={platform}&utm_medium=social&utm_campaign=autopilot"

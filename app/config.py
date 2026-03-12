@@ -49,6 +49,7 @@ class Settings:
     # Analytics & SEO
     GOOGLE_ANALYTICS_ID: str = os.getenv("GOOGLE_ANALYTICS_ID", "")  # e.g. G-XXXXXXXXXX
     GOOGLE_SITE_VERIFICATION: str = os.getenv("GOOGLE_SITE_VERIFICATION", "")  # Search Console verification code
+    CANONICAL_DOMAIN: str = os.getenv("CANONICAL_DOMAIN", "https://www.primehaul.co.uk")  # Always used for SEO URLs
 
 
 settings = Settings()

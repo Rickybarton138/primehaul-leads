@@ -179,9 +179,7 @@ def _estimate_route_distance(from_slug: str, to_slug: str) -> int:
 # ---------------------------------------------------------------------------
 @router.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt():
-    base_url = settings.APP_URL.rstrip("/")
-    if "localhost" in base_url:
-        base_url = "https://www.primehaul.co.uk"
+    base_url = settings.CANONICAL_DOMAIN.rstrip("/")
     return f"""User-agent: *
 Allow: /
 Allow: /removals/
@@ -201,9 +199,7 @@ Sitemap: {base_url}/sitemap.xml
 # ---------------------------------------------------------------------------
 @router.get("/sitemap.xml")
 async def sitemap_xml():
-    base_url = settings.APP_URL.rstrip("/")
-    if "localhost" in base_url:
-        base_url = "https://www.primehaul.co.uk"
+    base_url = settings.CANONICAL_DOMAIN.rstrip("/")
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -273,9 +269,7 @@ async def _city_landing(city_slug: str, request: Request):
 
     nearby = _get_nearby_cities(city_slug)
     routes = _get_routes_for_city(city_slug)
-    base_url = settings.APP_URL.rstrip("/")
-    if "localhost" in base_url:
-        base_url = "https://www.primehaul.co.uk"
+    base_url = settings.CANONICAL_DOMAIN.rstrip("/")
 
     return templates.TemplateResponse(
         "consumer/city_landing.html",
@@ -326,9 +320,7 @@ async def _route_landing(route_slug: str, request: Request):
     # Also add reverse route if exists
     reverse_exists = (to_slug, from_slug) in POPULAR_ROUTES
 
-    base_url = settings.APP_URL.rstrip("/")
-    if "localhost" in base_url:
-        base_url = "https://www.primehaul.co.uk"
+    base_url = settings.CANONICAL_DOMAIN.rstrip("/")
 
     return templates.TemplateResponse(
         "consumer/route_landing.html",
@@ -355,9 +347,7 @@ async def _route_landing(route_slug: str, request: Request):
 @router.get("/removals")
 async def removals_index(request: Request):
     """Index page listing all cities we cover — internal link hub."""
-    base_url = settings.APP_URL.rstrip("/")
-    if "localhost" in base_url:
-        base_url = "https://www.primehaul.co.uk"
+    base_url = settings.CANONICAL_DOMAIN.rstrip("/")
 
     # Group cities by region
     regions = {}
