@@ -32,8 +32,8 @@ def log_error(
     extra: dict = None,
 ):
     """Write an error record to the database."""
-    if _is_test_mode():
-        return  # Skip DB writes in test mode
+    if _is_test_mode() or SessionLocal is None:
+        return  # Skip DB writes in test mode or when DB not configured
     try:
         db = SessionLocal()
         entry = ErrorLog(

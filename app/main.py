@@ -24,12 +24,10 @@ from fastapi import (
     FastAPI,
     HTTPException,
     Request,
-    UploadFile,
 )
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from PIL import Image
 from sqlalchemy.orm import Session, joinedload
 
 from slowapi import _rate_limit_exceeded_handler
@@ -210,21 +208,6 @@ def stop_social_scheduler():
 
 
 # ---------------------------------------------------------------------------
-# Health check
-# ---------------------------------------------------------------------------
-@app.get("/health")
-async def health_check(db: Session = Depends(get_db)):
-    """Liveness / readiness probe — verifies the DB connection is working."""
-    from sqlalchemy import text
-
-    try:
-        db.execute(text("SELECT 1"))
-        return {"status": "healthy"}
-    except Exception:
-        raise HTTPException(status_code=503, detail="Database unavailable")
-
-
-# ---------------------------------------------------------------------------
 # Helper: resolve a Lead by its public token or raise 404
 # ---------------------------------------------------------------------------
 def get_lead_or_404(token: str, db: Session) -> Lead:
@@ -243,56 +226,6 @@ def get_lead_or_404(token: str, db: Session) -> Lead:
     return lead
 
 
-# ---------------------------------------------------------------------------
-# Helper: process and save an uploaded image
-# ---------------------------------------------------------------------------
-def _process_and_save_image(
-    upload_dir: pathlib.Path,
-    file_bytes: bytes,
-    original_filename: str,
-) -> dict:
-    """
-    Resize an image to fit within IMAGE_MAX_DIMENSION, convert to JPEG,
-    and save to *upload_dir*.  Returns metadata dict.
-    """
-    import io
-
-    unique_name = uuid.uuid4().hex + ".jpg"
-    dest = upload_dir / unique_name
-
-    img = Image.open(io.BytesIO(file_bytes))
-
-    # Handle EXIF orientation so the saved file is right-side-up
-    try:
-        from PIL import ImageOps
-        img = ImageOps.exif_transpose(img)
-    except Exception:
-        pass
-
-    # Convert palette / RGBA images to RGB for JPEG output
-    if img.mode in ("RGBA", "P", "LA"):
-        img = img.convert("RGB")
-
-    # Resize if the longest side exceeds the limit
-    max_side = max(img.size)
-    if max_side > IMAGE_MAX_DIMENSION:
-        ratio = IMAGE_MAX_DIMENSION / max_side
-        new_size = (int(img.width * ratio), int(img.height * ratio))
-        img = img.resize(new_size, Image.LANCZOS)
-
-    img.save(str(dest), format="JPEG", quality=JPEG_QUALITY, optimize=True)
-
-    file_size = dest.stat().st_size
-
-    return {
-        "filename": unique_name,
-        "original_filename": original_filename,
-        "storage_path": str(dest),
-        "file_size_bytes": file_size,
-        "mime_type": "image/jpeg",
-    }
-
-
 # ===================================================================
 #  HEALTH CHECK
 # ===================================================================
@@ -304,7 +237,7 @@ async def health_check(db: Session = Depends(get_db)):
         db.execute(text("SELECT 1"))
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
-        return {"status": "degraded", "database": str(e)}
+        raise HTTPException(status_code=503, detail=f"Database unavailable: {e}")
 
 
 # ===================================================================
