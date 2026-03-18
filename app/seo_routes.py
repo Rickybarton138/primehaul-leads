@@ -219,6 +219,13 @@ async def llms_txt():
 
 
 # ---------------------------------------------------------------------------
+# Google Search Console verification
+# ---------------------------------------------------------------------------
+@router.get("/google0f5f5cc1b247f8c4.html", response_class=PlainTextResponse)
+async def google_verification():
+    return "google-site-verification: google0f5f5cc1b247f8c4.html"
+
+
 # Bing Webmaster Tools verification
 # ---------------------------------------------------------------------------
 @router.get("/BingSiteAuth.xml")
