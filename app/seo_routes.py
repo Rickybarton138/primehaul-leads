@@ -219,6 +219,17 @@ async def llms_txt():
 
 
 # ---------------------------------------------------------------------------
+# Bing Webmaster Tools verification
+# ---------------------------------------------------------------------------
+@router.get("/BingSiteAuth.xml")
+async def bing_site_auth():
+    content = """<?xml version="1.0"?>
+<users>
+	<user>CE59AEC8DEB21F303FBC0D31BE9D3A69</user>
+</users>"""
+    return Response(content=content, media_type="application/xml")
+
+
 # robots.txt
 # ---------------------------------------------------------------------------
 @router.get("/robots.txt", response_class=PlainTextResponse)
