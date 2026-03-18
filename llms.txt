@@ -1,0 +1,70 @@
+# PrimeHaul Leads
+
+> Free AI-powered moving estimates for UK house movers. Consumers upload room photos, receive instant AI inventory analysis and cost estimates, then connect with verified removal companies.
+
+## About
+
+PrimeHaul Leads is a B2C lead generation platform for the UK removals industry. Consumers complete a guided moving survey with room-by-room photo uploads. AI vision (GPT-4o) analyses each photo to extract a detailed furniture inventory with dimensions, weight, and cubic metres. The system calculates an instant price estimate based on distance, volume, access difficulty, and special handling requirements. Completed surveys become qualified leads that verified removal companies can purchase through a B2B marketplace.
+
+## Key Facts
+
+- Free for consumers, no obligation
+- AI vision extracts item-level inventory from room photos (GPT-4o-mini)
+- Covers house moves, flat moves, and office relocations
+- UK-wide coverage across 60+ cities
+- 69+ popular route pages (e.g. London to Manchester)
+- Distance-based and volume-based pricing model
+- Referral programme with up to 20% discount for sharing
+- Shareable estimate cards with Open Graph tags
+- Removal companies purchase pre-qualified leads via Stripe
+- Hosted on Railway, built with FastAPI and PostgreSQL
+
+## How It Works
+
+1. Consumer enters pickup and drop-off locations on an interactive map
+2. Selects property types and access details (floors, lift, parking, steps)
+3. Chooses a move date
+4. Adds rooms and uploads up to 6 photos per room
+5. AI analyses photos and extracts a full inventory (items, dimensions, weight, CBM)
+6. Consumer reviews and edits the inventory
+7. System calculates an instant cost estimate (low-high range)
+8. Consumer submits contact details
+9. Lead is distributed to matching removal companies by location and capacity
+10. Companies purchase the lead to access full details
+
+## Features
+
+- Interactive Mapbox survey with pickup/drop-off selection
+- AI-powered photo inventory extraction
+- Instant price estimates with detailed breakdown
+- Room-by-room photo upload (JPEG, PNG, WebP, HEIC)
+- Referral sharing with discount rewards
+- Company dashboard for lead purchasing
+- Admin panel with KPIs, revenue tracking, and analytics
+- Programmatic SEO with 60+ city landing pages and 69+ route pages
+- Social media auto-pilot (Facebook, Instagram, X, LinkedIn)
+- Stripe billing integration for B2B lead purchases
+- S3-compatible photo storage with local fallback
+
+## Key Pages
+
+- Homepage: https://leads.primehaul.co.uk/
+- Start a free quote: https://leads.primehaul.co.uk/start
+- All covered cities: https://leads.primehaul.co.uk/removals
+- London removals: https://leads.primehaul.co.uk/removals/london
+- Manchester removals: https://leads.primehaul.co.uk/removals/manchester
+- Birmingham removals: https://leads.primehaul.co.uk/removals/birmingham
+- London to Manchester: https://leads.primehaul.co.uk/removals/london-to-manchester
+- London to Birmingham: https://leads.primehaul.co.uk/removals/london-to-birmingham
+- London to Edinburgh: https://leads.primehaul.co.uk/removals/london-to-edinburgh
+- Privacy policy: https://leads.primehaul.co.uk/privacy
+- Terms of service: https://leads.primehaul.co.uk/terms
+
+## Coverage
+
+UK nationwide: London, Manchester, Birmingham, Leeds, Glasgow, Liverpool, Edinburgh, Bristol, Sheffield, Newcastle, Nottingham, Cardiff, Leicester, Coventry, Bradford, Belfast, Brighton, Bournemouth, Southampton, Plymouth, and 40+ more cities.
+
+## Contact
+
+- Website: https://leads.primehaul.co.uk
+- Email: rickybarton138@btinternet.com
