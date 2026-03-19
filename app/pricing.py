@@ -145,19 +145,5 @@ def calculate_lead_estimate(lead) -> dict:
 
 
 def calculate_lead_price_pence(total_cbm: float, db) -> int:
-    """Determine lead price in pence based on CBM and pricing tiers."""
-    from app.models import LeadPricingTier
-
-    tiers = (
-        db.query(LeadPricingTier)
-        .filter(LeadPricingTier.is_active == True)
-        .order_by(LeadPricingTier.min_cbm)
-        .all()
-    )
-
-    for tier in tiers:
-        max_cbm = float(tier.max_cbm) if tier.max_cbm else 99999
-        if float(tier.min_cbm) <= total_cbm <= max_cbm:
-            return tier.price_pence
-
-    return 1000  # Default GBP 10.00
+    """Determine lead price in pence. Flat rate: £15 per lead."""
+    return 1500  # £15.00 flat rate per lead
